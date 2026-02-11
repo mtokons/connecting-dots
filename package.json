@@ -1,0 +1,21 @@
+{
+  "name": "connecting-dots-bd-election",
+  "version": "1.0.0",
+  "description": "Connecting Dots - AI-Powered Bangladesh Election Dashboard with D3 Tree Visualization",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "cd client && npm run dev",
+    "server": "cd server && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && node index.js",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "setup": "node server/scripts/seedData.js"
+  },
+  "keywords": ["bangladesh", "election", "dashboard", "d3", "ai", "prediction"],
+  "author": "Connecting Dots",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

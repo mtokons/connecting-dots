@@ -1,0 +1,328 @@
+const express = require('express');
+const router = express.Router();
+const { getDb } = require('../db/database');
+
+// ─── GET DASHBOARD SUMMARY ─────────────────────────────
+router.get('/dashboard', (req, res) => {
+  try {
+    const db = getDb();
+
+    // Total seats by status
+    const seatStatus = db.prepare(`
+      SELECT
+        status,
+        COUNT(DISTINCT constituency_id) as count
+      FROM results
+      GROUP BY status
+    `).all();
+
+    // Party-wise seat count (leading or won)
+    const partySeats = db.prepare(`
+      SELECT
+        p.id, p.name, p.short_name, p.color, p.name_bn,
+        COUNT(*) as seats_leading,
+        SUM(CASE WHEN r.status = 'declared' THEN 1 ELSE 0 END) as seats_won,
+        SUM(r.votes) as total_votes
+      FROM parties p
+      JOIN candidates c ON c.party_id = p.id
+      JOIN results r ON r.candidate_id = c.id
+      WHERE r.candidate_id IN (
+        SELECT r2.candidate_id
+        FROM results r2
+        WHERE r2.constituency_id = r.constituency_id
+        ORDER BY r2.votes DESC
+        LIMIT 1
+      )
+      GROUP BY p.id
+      ORDER BY seats_leading DESC
+    `).all();
+
+    // Total votes cast
+    const totalVotes = db.prepare(`
+      SELECT SUM(votes) as total FROM results
+    `).get();
+
+    // Total constituencies reporting
+    const reporting = db.prepare(`
+      SELECT COUNT(DISTINCT constituency_id) as count FROM results WHERE centers_reported > 0
+    `).get();
+
+    res.json({
+      success: true,
+      data: {
+        seatStatus,
+        partySeats,
+        totalVotes: totalVotes?.total || 0,
+        totalConstituencies: 300,
+        reporting: reporting?.count || 0,
+        lastUpdated: new Date().toISOString()
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── GET ALL PARTY RESULTS (for D3 tree) ────────────────
+router.get('/parties/tree', (req, res) => {
+  try {
+    const db = getDb();
+
+    const parties = db.prepare(`
+      SELECT p.id, p.name, p.short_name, p.color, p.name_bn, p.leader
+      FROM parties p
+      ORDER BY p.id
+    `).all();
+
+    const treeData = parties.map(party => {
+      // Get constituencies where this party is leading
+      const leading = db.prepare(`
+        SELECT
+          c.constituency_id,
+          co.name as constituency_name,
+          co.division,
+          co.district,
+          c.name as candidate_name,
+          r.votes,
+          r.vote_percentage,
+          r.status,
+          r.centers_reported,
+          r.total_centers
+        FROM candidates c
+        JOIN results r ON r.candidate_id = c.id
+        JOIN constituencies co ON co.id = c.constituency_id
+        WHERE c.party_id = ?
+        AND r.candidate_id IN (
+          SELECT r2.candidate_id
+          FROM results r2
+          WHERE r2.constituency_id = r.constituency_id
+          ORDER BY r2.votes DESC
+          LIMIT 1
+        )
+        ORDER BY r.votes DESC
+      `).all(party.id);
+
+      // Group by division
+      const divisions = {};
+      for (const seat of leading) {
+        if (!divisions[seat.division]) {
+          divisions[seat.division] = { name: seat.division, seats: [] };
+        }
+        divisions[seat.division].seats.push(seat);
+      }
+
+      return {
+        ...party,
+        totalSeats: leading.length,
+        divisions: Object.values(divisions),
+        seats: leading
+      };
+    });
+
+    // Sort by total seats (most popular first)
+    treeData.sort((a, b) => b.totalSeats - a.totalSeats);
+
+    res.json({ success: true, data: treeData });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── GET CONSTITUENCY DETAILS ───────────────────────────
+router.get('/constituency/:id', (req, res) => {
+  try {
+    const db = getDb();
+    const { id } = req.params;
+
+    const constituency = db.prepare(`
+      SELECT * FROM constituencies WHERE id = ?
+    `).get(id);
+
+    if (!constituency) {
+      return res.status(404).json({ success: false, error: 'Constituency not found' });
+    }
+
+    const results = db.prepare(`
+      SELECT
+        c.id as candidate_id, c.name as candidate_name, c.symbol,
+        p.name as party_name, p.short_name as party_short, p.color as party_color,
+        r.votes, r.vote_percentage, r.status, r.centers_reported, r.total_centers,
+        r.source, r.updated_at
+      FROM candidates c
+      JOIN parties p ON p.id = c.party_id
+      LEFT JOIN results r ON r.candidate_id = c.id AND r.constituency_id = ?
+      WHERE c.constituency_id = ?
+      ORDER BY r.votes DESC
+    `).all(id, id);
+
+    res.json({ success: true, data: { constituency, results } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── GET ALL CONSTITUENCIES ─────────────────────────────
+router.get('/constituencies', (req, res) => {
+  try {
+    const db = getDb();
+    const { division, status, page = 1, limit = 50 } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = `
+      SELECT
+        co.id, co.name, co.division, co.district, co.total_voters,
+        c.name as leading_candidate, p.short_name as leading_party, p.color as party_color,
+        r.votes as leading_votes, r.vote_percentage, r.status,
+        r.centers_reported, r.total_centers
+      FROM constituencies co
+      LEFT JOIN results r ON r.constituency_id = co.id
+      LEFT JOIN candidates c ON c.id = r.candidate_id
+      LEFT JOIN parties p ON p.id = c.party_id
+      WHERE r.candidate_id IN (
+        SELECT r2.candidate_id FROM results r2
+        WHERE r2.constituency_id = co.id
+        ORDER BY r2.votes DESC
+        LIMIT 1
+      )
+    `;
+
+    const params = [];
+    if (division) {
+      query += ' AND co.division = ?';
+      params.push(division);
+    }
+    if (status) {
+      query += ' AND r.status = ?';
+      params.push(status);
+    }
+
+    query += ` ORDER BY co.id LIMIT ? OFFSET ?`;
+    params.push(parseInt(limit), parseInt(offset));
+
+    const constituencies = db.prepare(query).all(...params);
+
+    const total = db.prepare('SELECT COUNT(*) as count FROM constituencies').get();
+
+    res.json({
+      success: true,
+      data: constituencies,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total: total.count }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── GET PREDICTIONS ────────────────────────────────────
+router.get('/predictions', (req, res) => {
+  try {
+    const db = getDb();
+
+    const predictions = db.prepare(`
+      SELECT
+        pred.id, pred.predicted_seats, pred.confidence, pred.win_probability,
+        pred.model_version, pred.predicted_at,
+        p.name as party_name, p.short_name, p.color, p.name_bn
+      FROM predictions pred
+      JOIN parties p ON p.id = pred.party_id
+      ORDER BY pred.predicted_seats DESC
+    `).all();
+
+    res.json({ success: true, data: predictions });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── GET DIVISION SUMMARY ───────────────────────────────
+router.get('/divisions', (req, res) => {
+  try {
+    const db = getDb();
+
+    const divisions = db.prepare(`
+      SELECT
+        co.division,
+        COUNT(DISTINCT co.id) as total_seats,
+        SUM(r.votes) as total_votes
+      FROM constituencies co
+      LEFT JOIN results r ON r.constituency_id = co.id
+      GROUP BY co.division
+      ORDER BY total_seats DESC
+    `).all();
+
+    // Get leading party per division
+    const divisionData = divisions.map(div => {
+      const partyBreakdown = db.prepare(`
+        SELECT
+          p.short_name, p.color, p.name,
+          COUNT(*) as seats
+        FROM constituencies co
+        JOIN results r ON r.constituency_id = co.id
+        JOIN candidates c ON c.id = r.candidate_id
+        JOIN parties p ON p.id = c.party_id
+        WHERE co.division = ?
+        AND r.candidate_id IN (
+          SELECT r2.candidate_id FROM results r2
+          WHERE r2.constituency_id = r.constituency_id
+          ORDER BY r2.votes DESC
+          LIMIT 1
+        )
+        GROUP BY p.id
+        ORDER BY seats DESC
+      `).all(div.division);
+
+      return { ...div, parties: partyBreakdown };
+    });
+
+    res.json({ success: true, data: divisionData });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── GET SCRAPE STATUS ──────────────────────────────────
+router.get('/scrape/status', (req, res) => {
+  try {
+    const db = getDb();
+
+    const sources = db.prepare(`
+      SELECT s.*, 
+        (SELECT COUNT(*) FROM scrape_log sl WHERE sl.source_id = s.id) as total_scrapes,
+        (SELECT sl.scraped_at FROM scrape_log sl WHERE sl.source_id = s.id ORDER BY sl.scraped_at DESC LIMIT 1) as last_scrape_time
+      FROM scrape_sources s
+      ORDER BY s.name
+    `).all();
+
+    res.json({ success: true, data: sources });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── SEARCH ─────────────────────────────────────────────
+router.get('/search', (req, res) => {
+  try {
+    const db = getDb();
+    const { q } = req.query;
+
+    if (!q || q.length < 2) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const results = db.prepare(`
+      SELECT co.id, co.name, co.division, co.district,
+        c.name as candidate_name, p.short_name as party
+      FROM constituencies co
+      LEFT JOIN candidates c ON c.constituency_id = co.id
+      LEFT JOIN parties p ON p.id = c.party_id
+      WHERE co.name LIKE ? OR co.district LIKE ? OR c.name LIKE ? OR p.name LIKE ?
+      LIMIT 20
+    `).all(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+
+    res.json({ success: true, data: results });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+module.exports = router;
