@@ -307,7 +307,7 @@ export default function Predictions() {
           </div>
           <div className="bg-white/[0.03] rounded-xl p-4">
             <div className="font-bold text-emerald-400 mb-2">Data Sources</div>
-            <div className="text-slate-400">election.results.com.bd, election.unb.com.bd, electionresult2026bd.com, votebd.org (SHUJAN), EC, Daily Star, Prothom Alo, bdnews24.</div>
+            <div className="text-slate-400">election.results.com.bd, election.unb.com.bd, electionresult2026bd.com, votebd.org (SHUJAN), onefiftyonebd.com, EC, Daily Star, Prothom Alo, bdnews24.</div>
           </div>
           <div className="bg-white/[0.03] rounded-xl p-4">
             <div className="font-bold text-violet-400 mb-2">Model Version</div>

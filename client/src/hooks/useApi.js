@@ -80,6 +80,11 @@ export function useDivisions() {
   return useApi('/divisions', { autoRefresh: 30000 });
 }
 
+// ─── News ticker hook ───────────────────────────────────
+export function useNewsTicker() {
+  return useApi('/news', { autoRefresh: 60000 });
+}
+
 // ─── SSE (Server-Sent Events) hook ──────────────────────
 export function useSSE() {
   const [lastUpdate, setLastUpdate] = useState(null);

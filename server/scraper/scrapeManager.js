@@ -8,6 +8,7 @@ const {
   ProthomAloScraper,
   BdNews24Scraper,
   VoteBDScraper,
+  OneFiftyOneBDScraper,
   processScrapedResults,
 } = require('./scrapers');
 const { broadcastBreaking } = require('../routes/sse');
@@ -22,6 +23,7 @@ const scrapers = [
   new ProthomAloScraper(),          // prothomalo.com
   new BdNews24Scraper(),            // bdnews24.com
   new VoteBDScraper(),              // votebd.org (SHUJAN)
+  new OneFiftyOneBDScraper(),       // onefiftyonebd.com (projections + ticker)
 ];
 
 /**

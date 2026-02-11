@@ -389,12 +389,14 @@ export default function Dashboard() {
             { name: 'election.unb.com.bd', type: 'Primary' },
             { name: 'electionresult2026bd.com', type: 'Primary' },
             { name: 'ecs.gov.bd (EC)', type: 'Official' },
+            { name: 'votebd.org (SHUJAN)', type: 'Primary' },
+            { name: 'onefiftyonebd.com', type: 'Aggregator' },
             { name: 'The Daily Star', type: 'News' },
             { name: 'Prothom Alo', type: 'News' },
             { name: 'bdnews24', type: 'News' },
           ].map((src, i) => (
             <span key={i} className="text-[10px] bg-white/5 text-slate-400 px-2 py-1 rounded-full border border-white/10">
-              {src.type === 'Primary' ? '🔵' : src.type === 'Official' ? '🟢' : '🟡'} {src.name}
+              {src.type === 'Primary' ? '🔵' : src.type === 'Official' ? '🟢' : src.type === 'Aggregator' ? '🟣' : '🟡'} {src.name}
             </span>
           ))}
         </div>
