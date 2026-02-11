@@ -1,5 +1,8 @@
 const { getDb } = require('../db/database');
 const {
+  ElectionResultsBDScraper,
+  UNBElectionScraper,
+  ElectionResult2026Scraper,
   ECSScraper,
   DailyStarScraper,
   ProthomAloScraper,
@@ -8,12 +11,15 @@ const {
 } = require('./scrapers');
 const { broadcastBreaking } = require('../routes/sse');
 
-// All active scrapers
+// All active scrapers — priority order (primary → secondary)
 const scrapers = [
-  new ECSScraper(),
-  new DailyStarScraper(),
-  new ProthomAloScraper(),
-  new BdNews24Scraper(),
+  new ElectionResultsBDScraper(),   // election.results.com.bd
+  new UNBElectionScraper(),         // election.unb.com.bd
+  new ElectionResult2026Scraper(),  // electionresult2026bd.com
+  new ECSScraper(),                 // ecs.gov.bd (official)
+  new DailyStarScraper(),           // thedailystar.net
+  new ProthomAloScraper(),          // prothomalo.com
+  new BdNews24Scraper(),            // bdnews24.com
 ];
 
 /**
@@ -29,9 +35,9 @@ async function scrapeAllSources() {
 
   for (const scraper of scrapers) {
     try {
-      console.log(`  📰 Scraping: ${scraper.name}`);
+      console.log(`  📰 Scraping: ${scraper.name} (${scraper.url})`);
       const results = await scraper.scrape();
-      
+
       if (results.length > 0) {
         const { updated, newResults } = processScrapedResults(results);
         totalResults += results.length;
@@ -43,7 +49,6 @@ async function scrapeAllSources() {
         if (source) {
           scraper.logResult(db, source.id, results.length);
         }
-
         console.log(`    ✅ Found ${results.length} results (${updated} updated, ${newResults} new)`);
       } else {
         console.log(`    ℹ️  No results found`);
@@ -61,10 +66,8 @@ async function scrapeAllSources() {
     }
   }
 
-  // Simulate live updates for demo (updates random constituencies)
+  // Simulate live vote counting updates for demo (will be replaced by real data)
   simulateLiveUpdates();
-
-  // Check for any seat that just got declared
   checkForDeclaredSeats();
 
   console.log(`📊 Scrape summary: ${totalResults} results, ${totalUpdated} updated, ${totalNew} new`);
@@ -72,13 +75,13 @@ async function scrapeAllSources() {
 }
 
 /**
- * Simulate live vote updates for demo purposes
- * In production, this would be replaced by real scraper data
+ * Simulate live vote counting for demo
+ * Simulates realistic vote distribution patterns for the 2026 election
  */
 function simulateLiveUpdates() {
   const db = getDb();
 
-  // Pick 10 random constituencies and update vote counts
+  // Pick random constituencies still counting
   const constituencies = db.prepare(`
     SELECT DISTINCT constituency_id FROM results
     WHERE status = 'counting'
@@ -88,12 +91,24 @@ function simulateLiveUpdates() {
 
   for (const { constituency_id } of constituencies) {
     const candidates = db.prepare(`
-      SELECT id, votes FROM results WHERE constituency_id = ?
+      SELECT r.id, r.votes, c.party_id, p.short_name as party
+      FROM results r
+      JOIN candidates c ON c.id = r.candidate_id
+      JOIN parties p ON p.id = c.party_id
+      WHERE r.constituency_id = ?
     `).all(constituency_id);
 
     let totalVotes = 0;
     for (const c of candidates) {
-      const increment = Math.floor(Math.random() * 2000);
+      // Give BNP slight edge, Jamaat moderate, others less — reflecting polls
+      let multiplier = 1;
+      if (c.party === 'BNP') multiplier = 1.4;
+      else if (c.party === 'JI') multiplier = 1.2;
+      else if (c.party === 'NCP') multiplier = 0.9;
+      else if (c.party === 'JP') multiplier = 0.6;
+      else if (c.party === 'IAB') multiplier = 0.5;
+
+      const increment = Math.floor(Math.random() * 2000 * multiplier);
       const newVotes = c.votes + increment;
       totalVotes += newVotes;
       db.prepare('UPDATE results SET votes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
@@ -107,7 +122,7 @@ function simulateLiveUpdates() {
       db.prepare('UPDATE results SET vote_percentage = ? WHERE id = ?').run(parseFloat(pct), c.id);
     }
 
-    // Update centers reported
+    // Advance center count
     const result = db.prepare('SELECT centers_reported, total_centers FROM results WHERE constituency_id = ? LIMIT 1')
       .get(constituency_id);
     if (result && result.centers_reported < result.total_centers) {
@@ -115,7 +130,6 @@ function simulateLiveUpdates() {
       db.prepare('UPDATE results SET centers_reported = ? WHERE constituency_id = ?')
         .run(newCenters, constituency_id);
 
-      // If all centers reported, mark as declared
       if (newCenters >= result.total_centers) {
         db.prepare("UPDATE results SET status = 'declared' WHERE constituency_id = ?")
           .run(constituency_id);
@@ -125,13 +139,13 @@ function simulateLiveUpdates() {
 }
 
 /**
- * Check for newly declared seats and broadcast
+ * Check for newly declared seats and broadcast breaking news
  */
 function checkForDeclaredSeats() {
   const db = getDb();
 
   const declared = db.prepare(`
-    SELECT 
+    SELECT
       co.name as constituency, c.name as winner, p.short_name as party, r.votes
     FROM results r
     JOIN candidates c ON c.id = r.candidate_id
@@ -142,11 +156,9 @@ function checkForDeclaredSeats() {
     AND r.candidate_id IN (
       SELECT r2.candidate_id FROM results r2
       WHERE r2.constituency_id = r.constituency_id
-      ORDER BY r2.votes DESC
-      LIMIT 1
+      ORDER BY r2.votes DESC LIMIT 1
     )
-    ORDER BY r.updated_at DESC
-    LIMIT 5
+    ORDER BY r.updated_at DESC LIMIT 5
   `).all();
 
   for (const seat of declared) {
