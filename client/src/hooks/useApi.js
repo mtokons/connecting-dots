@@ -7,7 +7,7 @@ export function useApi(endpoint, options = {}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { autoRefresh = 0, enabled = true } = options;
+  const { autoRefresh = 0, enabled = true, fullResponse = false } = options;
 
   const fetchData = useCallback(async () => {
     if (!enabled) return;
@@ -16,7 +16,7 @@ export function useApi(endpoint, options = {}) {
       const res = await fetch(`${API_BASE}${endpoint}`);
       const json = await res.json();
       if (json.success) {
-        setData(json.data || json);
+        setData(fullResponse ? json : (json.data || json));
       } else {
         setError(json.error || 'Unknown error');
       }
@@ -25,7 +25,7 @@ export function useApi(endpoint, options = {}) {
     } finally {
       setLoading(false);
     }
-  }, [endpoint, enabled]);
+  }, [endpoint, enabled, fullResponse]);
 
   useEffect(() => {
     fetchData();
@@ -62,7 +62,17 @@ export function useConstituency(id) {
 
 // ─── Predictions hook ───────────────────────────────────
 export function usePredictions() {
-  return useApi('/predictions', { autoRefresh: 30000 });
+  const { data: raw, loading, error, refetch } = useApi('/predictions', { autoRefresh: 30000, fullResponse: true });
+  
+  return {
+    data: raw?.data || [],
+    scenarios: raw?.scenarios || [],
+    seatRanges: raw?.seatRanges || {},
+    electionInfo: raw?.electionInfo || {},
+    loading,
+    error,
+    refetch,
+  };
 }
 
 // ─── Divisions hook ─────────────────────────────────────

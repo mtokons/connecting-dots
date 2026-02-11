@@ -7,6 +7,7 @@ const {
   DailyStarScraper,
   ProthomAloScraper,
   BdNews24Scraper,
+  VoteBDScraper,
   processScrapedResults,
 } = require('./scrapers');
 const { broadcastBreaking } = require('../routes/sse');
@@ -20,6 +21,7 @@ const scrapers = [
   new DailyStarScraper(),           // thedailystar.net
   new ProthomAloScraper(),          // prothomalo.com
   new BdNews24Scraper(),            // bdnews24.com
+  new VoteBDScraper(),              // votebd.org (SHUJAN)
 ];
 
 /**

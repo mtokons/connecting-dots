@@ -69,6 +69,7 @@ function initialize() {
       source_url TEXT,
       is_verified INTEGER DEFAULT 0,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(constituency_id, candidate_id),
       FOREIGN KEY (constituency_id) REFERENCES constituencies(id),
       FOREIGN KEY (candidate_id) REFERENCES candidates(id)
     );

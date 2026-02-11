@@ -296,6 +296,7 @@ function seedData() {
     { name: 'The Daily Star', url: 'https://www.thedailystar.net/election-2026', type: 'news' },
     { name: 'Prothom Alo', url: 'https://www.prothomalo.com/election', type: 'news' },
     { name: 'bdnews24', url: 'https://bdnews24.com/election', type: 'news' },
+    { name: 'VoteBD (SHUJAN)', url: 'https://www.votebd.org/election-result/all-candidate-list?election=695b5e3e4678b44577fb9ab7', type: 'primary' },
     { name: 'Dhaka Tribune', url: 'https://www.dhakatribune.com/election', type: 'news' },
     { name: 'The Business Standard', url: 'https://www.tbsnews.net/election', type: 'news' },
   ];

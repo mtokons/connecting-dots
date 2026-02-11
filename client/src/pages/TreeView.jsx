@@ -16,11 +16,12 @@ export default function TreeView() {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-3">
             <TreePine className="text-green-400" />
-            Party Trees
+            Party Trees — 13th Jatiya Sangsad
             <span className="text-sm font-normal text-slate-400 font-bangla">পার্টি ট্রি ভিজ্যুয়ালাইজেশন</span>
           </h2>
           <p className="text-sm text-slate-400 mt-1">
             Each party is a tree — bigger trees have more seats. Click to explore divisions & constituencies.
+            <span className="text-xs ml-2 text-slate-500">12 parties • AL suspended • 300 seats</span>
           </p>
         </div>
       </div>
@@ -80,6 +81,7 @@ function PartyTreeCard({ party, rank }) {
           <div>
             <h3 className="font-bold text-lg">{party.short_name}</h3>
             <p className="text-xs text-slate-400">{party.name}</p>
+            {party.leader && <p className="text-[10px] text-slate-500">Leader: {party.leader}</p>}
           </div>
         </div>
         <div className="flex items-center gap-3">

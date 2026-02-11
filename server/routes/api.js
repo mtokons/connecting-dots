@@ -18,21 +18,20 @@ router.get('/dashboard', (req, res) => {
 
     // Party-wise seat count (leading or won)
     const partySeats = db.prepare(`
+      WITH leading AS (
+        SELECT r.constituency_id, r.candidate_id, r.votes, r.status,
+          ROW_NUMBER() OVER (PARTITION BY r.constituency_id ORDER BY r.votes DESC) as rn
+        FROM results r
+      )
       SELECT
         p.id, p.name, p.short_name, p.color, p.name_bn,
         COUNT(*) as seats_leading,
-        SUM(CASE WHEN r.status = 'declared' THEN 1 ELSE 0 END) as seats_won,
-        SUM(r.votes) as total_votes
-      FROM parties p
-      JOIN candidates c ON c.party_id = p.id
-      JOIN results r ON r.candidate_id = c.id
-      WHERE r.candidate_id IN (
-        SELECT r2.candidate_id
-        FROM results r2
-        WHERE r2.constituency_id = r.constituency_id
-        ORDER BY r2.votes DESC
-        LIMIT 1
-      )
+        SUM(CASE WHEN l.status = 'declared' THEN 1 ELSE 0 END) as seats_won,
+        SUM(l.votes) as total_votes
+      FROM leading l
+      JOIN candidates c ON c.id = l.candidate_id
+      JOIN parties p ON p.id = c.party_id
+      WHERE l.rn = 1
       GROUP BY p.id
       ORDER BY seats_leading DESC
     `).all();
@@ -77,6 +76,11 @@ router.get('/parties/tree', (req, res) => {
     const treeData = parties.map(party => {
       // Get constituencies where this party is leading
       const leading = db.prepare(`
+        WITH leading AS (
+          SELECT r.constituency_id, r.candidate_id,
+            ROW_NUMBER() OVER (PARTITION BY r.constituency_id ORDER BY r.votes DESC) as rn
+          FROM results r
+        )
         SELECT
           c.constituency_id,
           co.name as constituency_name,
@@ -88,17 +92,11 @@ router.get('/parties/tree', (req, res) => {
           r.status,
           r.centers_reported,
           r.total_centers
-        FROM candidates c
-        JOIN results r ON r.candidate_id = c.id
-        JOIN constituencies co ON co.id = c.constituency_id
-        WHERE c.party_id = ?
-        AND r.candidate_id IN (
-          SELECT r2.candidate_id
-          FROM results r2
-          WHERE r2.constituency_id = r.constituency_id
-          ORDER BY r2.votes DESC
-          LIMIT 1
-        )
+        FROM leading l
+        JOIN candidates c ON c.id = l.candidate_id
+        JOIN results r ON r.candidate_id = c.id AND r.constituency_id = l.constituency_id
+        JOIN constituencies co ON co.id = l.constituency_id
+        WHERE c.party_id = ? AND l.rn = 1
         ORDER BY r.votes DESC
       `).all(party.id);
 
@@ -169,21 +167,22 @@ router.get('/constituencies', (req, res) => {
     const offset = (page - 1) * limit;
 
     let query = `
+      WITH leading AS (
+        SELECT r.constituency_id, r.candidate_id,
+          ROW_NUMBER() OVER (PARTITION BY r.constituency_id ORDER BY r.votes DESC) as rn
+        FROM results r
+      )
       SELECT
         co.id, co.name, co.division, co.district, co.total_voters,
         c.name as leading_candidate, p.short_name as leading_party, p.color as party_color,
         r.votes as leading_votes, r.vote_percentage, r.status,
         r.centers_reported, r.total_centers
       FROM constituencies co
-      LEFT JOIN results r ON r.constituency_id = co.id
-      LEFT JOIN candidates c ON c.id = r.candidate_id
-      LEFT JOIN parties p ON p.id = c.party_id
-      WHERE r.candidate_id IN (
-        SELECT r2.candidate_id FROM results r2
-        WHERE r2.constituency_id = co.id
-        ORDER BY r2.votes DESC
-        LIMIT 1
-      )
+      JOIN leading l ON l.constituency_id = co.id AND l.rn = 1
+      JOIN results r ON r.constituency_id = l.constituency_id AND r.candidate_id = l.candidate_id
+      JOIN candidates c ON c.id = l.candidate_id
+      JOIN parties p ON p.id = c.party_id
+      WHERE 1=1
     `;
 
     const params = [];
@@ -228,7 +227,29 @@ router.get('/predictions', (req, res) => {
       ORDER BY pred.predicted_seats DESC
     `).all();
 
-    res.json({ success: true, data: predictions });
+    // Include scenarios and seat ranges from the prediction engine
+    const { SCENARIOS, PREDICTED_SEATS } = require('../ai/predictionEngine');
+
+    res.json({ 
+      success: true, 
+      data: predictions,
+      scenarios: SCENARIOS,
+      seatRanges: PREDICTED_SEATS,
+      electionInfo: {
+        votingDate: '2026-02-12T01:30:00.000Z', // 7:30 AM BDT = 1:30 AM UTC
+        totalVoters: 127695183,
+        totalSeats: 300,
+        votingSeats: 299,
+        postponedSeats: 1,
+        postponedName: 'Sherpur-3',
+        registeredParties: 51,
+        totalCandidates: 1994,
+        independents: 256,
+        firstPostalVoting: true,
+        noVoteOption: true,
+        referendumJulyCharter: true,
+      }
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -253,20 +274,19 @@ router.get('/divisions', (req, res) => {
     // Get leading party per division
     const divisionData = divisions.map(div => {
       const partyBreakdown = db.prepare(`
+        WITH leading AS (
+          SELECT r.constituency_id, r.candidate_id,
+            ROW_NUMBER() OVER (PARTITION BY r.constituency_id ORDER BY r.votes DESC) as rn
+          FROM results r
+        )
         SELECT
           p.short_name, p.color, p.name,
           COUNT(*) as seats
         FROM constituencies co
-        JOIN results r ON r.constituency_id = co.id
-        JOIN candidates c ON c.id = r.candidate_id
+        JOIN leading l ON l.constituency_id = co.id AND l.rn = 1
+        JOIN candidates c ON c.id = l.candidate_id
         JOIN parties p ON p.id = c.party_id
         WHERE co.division = ?
-        AND r.candidate_id IN (
-          SELECT r2.candidate_id FROM results r2
-          WHERE r2.constituency_id = r.constituency_id
-          ORDER BY r2.votes DESC
-          LIMIT 1
-        )
         GROUP BY p.id
         ORDER BY seats DESC
       `).all(div.division);

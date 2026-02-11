@@ -317,6 +317,53 @@ class BdNews24Scraper extends BaseScraper {
   }
 }
 
+// ─── 8. VOTEBD.ORG SCRAPER (SHUJAN) ────────────────────
+// Source: https://www.votebd.org — 2,027 total candidates
+// Run by SHUJAN (Citizens for Good Governance)
+class VoteBDScraper extends BaseScraper {
+  constructor() {
+    super('VoteBD (SHUJAN)', 'https://www.votebd.org/election-result/all-candidate-list?election=695b5e3e4678b44577fb9ab7');
+  }
+
+  async scrape() {
+    const $ = await this.fetch();
+    if (!$) return [];
+    const results = [];
+    // votebd.org candidate table rows — server-rendered
+    $('table tbody tr, .candidate-row, .card-body').each((i, el) => {
+      try {
+        const cells = $(el).find('td');
+        if (cells.length < 3) return;
+        const name = $(cells[2]).text().trim() || $(el).find('.candidate-name, h5').text().trim();
+        const party = $(cells[3]).text().trim() || $(el).find('.party-name, .badge').text().trim();
+        const constituency = $(cells[4]).text().trim() || $(el).find('.constituency, .seat-name').text().trim();
+        const votes = parseInt(($(cells[5]).text() || '0').replace(/,/g, '')) || 0;
+        if (constituency && name) {
+          results.push({ constituency, candidate: name, party, votes, source: this.name });
+        }
+      } catch (e) { /* skip */ }
+    });
+    // Also try election result page
+    if (results.length === 0) {
+      const $r = await this.fetch('https://www.votebd.org/election-result/all-election-result');
+      if ($r) {
+        $r('.result-card, .seat-result, tr').each((i, el) => {
+          try {
+            const seat = $r(el).find('.seat-name, td:first-child').text().trim();
+            const winner = $r(el).find('.winner, .elected, td:nth-child(2)').text().trim();
+            const partyName = $r(el).find('.party, td:nth-child(3)').text().trim();
+            const voteCount = parseInt(($r(el).find('.votes, td:nth-child(4)').text() || '0').replace(/,/g, '')) || 0;
+            if (seat && winner) {
+              results.push({ constituency: seat, candidate: winner, party: partyName, votes: voteCount, source: this.name });
+            }
+          } catch (e) { /* skip */ }
+        });
+      }
+    }
+    return results;
+  }
+}
+
 // ─── RESULT PROCESSOR ────────────────────────────────────
 function processScrapedResults(results) {
   const db = getDb();
@@ -369,5 +416,6 @@ module.exports = {
   DailyStarScraper,
   ProthomAloScraper,
   BdNews24Scraper,
+  VoteBDScraper,
   processScrapedResults,
 };
