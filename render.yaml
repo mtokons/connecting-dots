@@ -5,7 +5,8 @@ services:
     runtime: node
     region: singapore  # Closest to Bangladesh
     plan: free
-    buildCommand: npm install && cd client && npm install && npm run build && cd ../server && npm install
+    rootDir: ./
+    buildCommand: cd client && npm install && npx vite build && cd ../server && npm install
     startCommand: cd server && node index.js
     envVars:
       - key: NODE_ENV
