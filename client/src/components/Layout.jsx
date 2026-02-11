@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSSE } from '../hooks/useApi';
 import { 
-  LayoutDashboard, TreePine, MapPin, Brain, 
+  Home, LayoutDashboard, TreePine, MapPin, Brain, 
   Radio, Menu, X, Search, Wifi, WifiOff 
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', labelBn: 'ড্যাশবোর্ড', icon: LayoutDashboard },
+  { path: '/', label: 'Home', labelBn: 'হোম', icon: Home },
+  { path: '/dashboard', label: 'Dashboard', labelBn: 'ড্যাশবোর্ড', icon: LayoutDashboard },
   { path: '/tree', label: 'Party Trees', labelBn: 'পার্টি ট্রি', icon: TreePine },
   { path: '/constituencies', label: '300 Seats', labelBn: '৩০০ আসন', icon: MapPin },
   { path: '/predictions', label: 'AI Predictions', labelBn: 'এআই পূর্বাভাস', icon: Brain },
