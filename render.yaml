@@ -6,7 +6,7 @@ services:
     region: singapore  # Closest to Bangladesh
     plan: free
     rootDir: ./
-    buildCommand: cd client && npm install && npx vite build && cd ../server && npm install
+    buildCommand: cd client && npm install --include=dev && npm run build && cd ../server && npm install
     startCommand: cd server && node index.js
     envVars:
       - key: NODE_ENV
