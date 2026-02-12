@@ -41,12 +41,37 @@ if (process.env.NODE_ENV === 'production') {
 // Initialize database
 db.initialize();
 
-// Check if DB needs seeding (for production first run)
+// Check if DB needs seeding or re-seeding (schema updated)
 const database = db.getDb();
 const partyCount = database.prepare('SELECT COUNT(*) as count FROM parties').get();
-if (partyCount.count === 0) {
-  console.log('📦 Empty database detected, seeding...');
+
+// Check for schema version — if news_ticker table is missing, we need a full re-seed
+let needsReseed = partyCount.count === 0;
+try {
+  database.prepare('SELECT COUNT(*) FROM news_ticker').get();
+  // Also check if OneFiftyOneBD source exists
+  const hasNewSource = database.prepare("SELECT COUNT(*) as count FROM scrape_sources WHERE name = 'OneFiftyOneBD'").get();
+  if (hasNewSource.count === 0) needsReseed = true;
+} catch (e) {
+  needsReseed = true; // Table doesn't exist yet
+}
+
+if (needsReseed) {
+  console.log('📦 Database needs update — re-seeding with latest 2026 election data...');
+  // Drop and recreate for clean state
+  try {
+    database.exec('DROP TABLE IF EXISTS scrape_log');
+    database.exec('DROP TABLE IF EXISTS news_ticker');
+    database.exec('DROP TABLE IF EXISTS predictions');
+    database.exec('DROP TABLE IF EXISTS results');
+    database.exec('DROP TABLE IF EXISTS candidates');
+    database.exec('DROP TABLE IF EXISTS constituencies');
+    database.exec('DROP TABLE IF EXISTS scrape_sources');
+    database.exec('DROP TABLE IF EXISTS parties');
+  } catch (e) { /* ignore */ }
+  db.initialize();
   seedData();
+  console.log('✅ Database re-seeded successfully');
 }
 
 // Schedule scraping every N minutes

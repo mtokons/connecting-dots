@@ -6,7 +6,7 @@ services:
     region: singapore  # Closest to Bangladesh
     plan: free
     rootDir: ./
-    buildCommand: cd client && npm ci && npm run build && cd ../server && npm ci
+    buildCommand: cd client && npm ci && npm run build && cd ../server && npm ci && rm -f db/election.db
     startCommand: cd server && node index.js
     envVars:
       - key: NODE_ENV
