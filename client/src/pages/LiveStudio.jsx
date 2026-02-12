@@ -6,10 +6,12 @@ export default function LiveStudio() {
   const { connected, breaking } = useSSE();
   const { data: dashboard } = useDashboard();
   const [youtubeId, setYoutubeId] = useState('');
-  const [activeStream, setActiveStream] = useState(null);
+  // Auto-play the live election results stream
+  const [activeStream, setActiveStream] = useState('HtNr_rp1juA');
 
-  // Sample YouTube channels for Bangladesh election coverage
+  // Live & suggested YouTube channels for Bangladesh election coverage
   const suggestedChannels = [
+    { name: '🔴 LIVE Election Results', id: 'HtNr_rp1juA', type: 'Live Now', live: true },
     { name: 'Somoy TV', id: 'somoaborton', type: 'News' },
     { name: 'Independent TV', id: 'independenttv', type: 'News' },
     { name: 'NTV Bangladesh', id: 'naborton', type: 'News' },
@@ -67,6 +69,13 @@ export default function LiveStudio() {
                   <p className="text-sm text-slate-500 max-w-md">
                     Enter a YouTube video/stream ID below or select from suggested channels to watch live election coverage
                   </p>
+                  <button
+                    onClick={() => handleLoadStream('HtNr_rp1juA')}
+                    className="mt-4 px-6 py-2.5 bg-red-500 hover:bg-red-600 rounded-xl font-bold text-sm flex items-center gap-2 mx-auto transition-colors"
+                  >
+                    <Play size={16} />
+                    Watch Live Election Results
+                  </button>
                 </div>
               )}
             </div>
@@ -105,26 +114,48 @@ export default function LiveStudio() {
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {suggestedChannels.map(channel => (
-                <a
-                  key={channel.id}
-                  href={`https://www.youtube.com/@${channel.id}/live`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-colors group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-                    <Youtube size={14} className="text-red-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{channel.name}</div>
-                    <div className="text-xs text-slate-500">{channel.type}</div>
-                  </div>
-                  <ExternalLink size={12} className="text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </a>
+                channel.live ? (
+                  <button
+                    key={channel.id}
+                    onClick={() => handleLoadStream(channel.id)}
+                    className={`flex items-center gap-2 p-3 rounded-xl transition-colors group text-left ${
+                      activeStream === channel.id
+                        ? 'bg-red-500/20 border border-red-500/40 ring-1 ring-red-500/20'
+                        : 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/20'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-red-500/30 flex items-center justify-center relative">
+                      <Play size={14} className="text-red-400" />
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping" />
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-red-400 truncate">{channel.name}</div>
+                      <div className="text-[10px] text-red-400/60 uppercase tracking-wider">{channel.type}</div>
+                    </div>
+                  </button>
+                ) : (
+                  <a
+                    key={channel.id}
+                    href={`https://www.youtube.com/@${channel.id}/live`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-colors group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                      <Youtube size={14} className="text-red-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{channel.name}</div>
+                      <div className="text-xs text-slate-500">{channel.type}</div>
+                    </div>
+                    <ExternalLink size={12} className="text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                )
               ))}
             </div>
             <p className="text-xs text-slate-500 mt-3 text-center">
-              Click to open channel's live page in new tab, then copy the video ID back here
+              🔴 Click the LIVE stream to watch here, or open other channels in a new tab
             </p>
           </div>
         </div>
@@ -161,7 +192,7 @@ export default function LiveStudio() {
             {/* Top Parties Mini */}
             <div className="mt-4 pt-3 border-t border-white/5">
               <div className="text-xs text-slate-400 mb-2">Leading Parties</div>
-              {dashboard?.partySeats?.slice(0, 4).map(party => (
+              {dashboard?.partySeats?.length > 0 ? dashboard.partySeats.slice(0, 4).map(party => (
                 <div key={party.id} className="flex items-center gap-2 py-1.5">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: party.color }} />
                   <span className="text-xs flex-1">{party.short_name}</span>
@@ -169,7 +200,9 @@ export default function LiveStudio() {
                     {party.seats_leading}
                   </span>
                 </div>
-              ))}
+              )) : (
+                <div className="text-xs text-slate-500 text-center py-3">Awaiting results...</div>
+              )}
             </div>
           </div>
 
