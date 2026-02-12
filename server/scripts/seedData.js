@@ -1,21 +1,16 @@
 const { getDb } = require('../db/database');
 
 /**
- * Seed data for Bangladesh Election 2026
- * 13th Jatiya Sangsad — 300 constituencies — Voting: 12 Feb 2026
+ * বাংলাদেশ নির্বাচন ২০২৬ — সিড ডেটা
+ * ১৩তম জাতীয় সংসদ — ৩০০ আসন — ভোটগ্রহণ: ১২ ফেব্রুয়ারি ২০২৬
  *
- * Real data sourced from:
- *  - election.results.com.bd
- *  - election.unb.com.bd
- *  - electionresult2026bd.com
+ * তথ্যসূত্র: যমুনা টিভি (https://www.jamuna.tv/parliament-election-2026)
  *
- * Key Facts:
- *  - 300 seats (299 voting, 1 postponed — Sherpur-3 candidate death)
- *  - 51 registered parties, ~1,994 candidates, 256 independents
- *  - 12,76,95,183 total voters (Male: 6,48,14,907 | Female: 6,28,79,042 | Third Gender: 1,234)
- *  - Awami League SUSPENDED — not contesting
- *  - First postal voting + "No Vote" option + Referendum (July Charter)
- *  - Called the world's first "Gen Z-influenced" election
+ * মূল তথ্য:
+ *  - ৩০০ আসন (২৯৯ ভোটগ্রহণ, ১ স্থগিত — শেরপুর-৩ প্রার্থীর মৃত্যু)
+ *  - ৫১টি নিবন্ধিত দল, ~২,০০৯ প্রার্থী, ২৬৬ স্বতন্ত্র
+ *  - ১২,৭৭,১১,৭৯৩ মোট ভোটার (পুরুষ: ৬,৪৮,১৪,৯০৭ | নারী: ৬,২৮,৭৯,০৪২ | তৃতীয় লিঙ্গ: ১,২৩৪)
+ *  - আওয়ামী লীগ স্থগিত — প্রতিদ্বন্দ্বিতা করেনি
  */
 
 function seedData() {
@@ -287,21 +282,9 @@ function seedData() {
   });
   insertCandidates();
 
-  // ─── SCRAPE SOURCES (Updated with 2026 portals) ────────
+  // ─── তথ্যসূত্র (একমাত্র যমুনা টিভি) ────────
   const sources = [
-    { name: 'Election Results BD', url: 'https://election.results.com.bd', type: 'news' },
-    { name: 'UNB Election Portal', url: 'https://election.unb.com.bd', type: 'news' },
-    { name: 'Election Result 2026 BD', url: 'https://electionresult2026bd.com', type: 'official' },
-    { name: 'Bangladesh Election Commission', url: 'https://www.ecs.gov.bd', type: 'official' },
-    { name: 'The Daily Star', url: 'https://www.thedailystar.net/election-2026', type: 'news' },
-    { name: 'Prothom Alo', url: 'https://www.prothomalo.com/election', type: 'news' },
-    { name: 'bdnews24', url: 'https://bdnews24.com/election', type: 'news' },
-    { name: 'VoteBD (SHUJAN)', url: 'https://www.votebd.org/election-result/all-candidate-list?election=695b5e3e4678b44577fb9ab7', type: 'primary' },
-    { name: 'OneFiftyOneBD', url: 'https://www.onefiftyonebd.com/', type: 'aggregator' },
-    { name: 'ElectionWatchBD', url: 'https://electionwatchbd.com/results', type: 'primary' },
-    { name: 'Prothom Alo English Live', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', type: 'news' },
-    { name: 'Dhaka Tribune', url: 'https://www.dhakatribune.com/election', type: 'news' },
-    { name: 'The Business Standard', url: 'https://www.tbsnews.net/election', type: 'news' },
+    { name: 'যমুনা টিভি', url: 'https://www.jamuna.tv/parliament-election-2026', type: 'primary' },
   ];
 
   const insertSource = db.prepare(`INSERT OR IGNORE INTO scrape_sources (name, url, type) VALUES (?, ?, ?)`);
@@ -355,40 +338,29 @@ function seedData() {
   });
   insertResults();
 
-  // Seed initial news ticker with real election-day headlines
+  // বাংলায় নিউজ টিকার — যমুনা টিভি থেকে
   const insertNews = db.prepare(`INSERT OR IGNORE INTO news_ticker (title, url, source, is_breaking) VALUES (?, ?, ?, ?)`);
   const seedNews = db.transaction(() => {
     const headlines = [
-      { title: 'Voting underway across 299 constituencies for 13th Jatiya Sangsad', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
-      { title: '12.77 crore voters to elect 13th Jatiya Sangsad today', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
-      { title: 'Violence, vote manipulation allegations surface on eve of polls', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      { title: 'Ballot stuffing allegations spark clash between Sylhet-3 Jamaat and BNP activists', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
-      { title: '330 untrained Ansar-VDP members removed from election duty', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      { title: 'EU observer mission chief: Free, fair election key to Bangladesh democratic future', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      { title: 'EC warns against smartphone use inside polling booths', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      { title: 'Army deployment complete at all 300 constituencies', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      { title: 'First-ever postal voting system debuts in Bangladesh election', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      { title: 'Counting begins after polls close at 4:30 PM — results expected by late night', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
-      { title: 'Tension at Narayanganj polling centre over alleged ballot tampering', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
-      { title: 'Altercation erupts between Chattogram-8 Jamaat candidate and BNP activists', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
-      { title: 'Dhaka may become the bellwether again — local factors may trump symbols', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      { title: 'NCP emerges as dark horse in several Dhaka constituencies', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      { title: 'Record 9.58 lakh security personnel deployed nationwide', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      { title: 'Prof Yunus: Let people decide who they want in power', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
-      // Prothom Alo English live blog results updates
-      { title: 'Jhenaidah-1: BNP\'s Asaduzzaman wins unofficially with 171,598 votes', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
-      { title: 'BNP candidates lead in all 5 Jamalpur constituencies', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
-      { title: 'Cumilla-4: Hasnat Abdullah leads with 17,986 votes in 15 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
-      { title: 'Thakurgaon-1: Mirza Fakhrul leads with 39,101 votes from 35 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
-      { title: 'Brahmanbaria-2: Independent Rumeen Farhana leads in 12 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
-      { title: 'Rangpur-4: NCP\'s Akhtar Hossain leads with 72,897 votes', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
-      { title: 'Sherpur-1 & Sherpur-2: Jamaat leads in partial results', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
-      { title: 'Bandarban: BNP\'s Saching Prue Jerry leads with 32,817 votes in 46 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
-      { title: 'Cox\'s Bazar-1: BNP\'s Salahuddin gets 28,069 votes in 20 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
-      { title: 'Rangpur-1 & Rangpur-3: Jamaat leads in partial results', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: '১৩তম জাতীয় সংসদ নির্বাচনে ২৯৯ আসনে ভোটগ্রহণ চলছে', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: '১২ কোটি ৭৭ লাখ ভোটার আজ ভোট দিচ্ছেন', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: 'শেরপুর-৩ আসনে প্রার্থীর মৃত্যুতে ভোটগ্রহণ স্থগিত', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 0 },
+      { title: 'ঝিনাইদহ-১: বিএনপির আসাদুজ্জামান ১,৭১,৫৯৮ ভোটে বিজয়ী', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: 'কুমিল্লা-৪: হাসনাত আবদুল্লাহ ১৫টি কেন্দ্রে ১৭,৯৮৬ ভোটে এগিয়ে', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: 'কক্সবাজার-১: বিএনপির সালাহউদ্দিন আহমদ ২০টি কেন্দ্রে ২৮,০৬৯ ভোট পেয়েছেন', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: 'ঠাকুরগাঁও-১: মির্জা ফখরুল ৩৫টি কেন্দ্রে ৩৯,১০১ ভোটে এগিয়ে', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: 'বান্দরবান: বিএনপির সাচিং প্রু জেরি ৪৬টি কেন্দ্রে ৩২,৮১৭ ভোটে এগিয়ে', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: 'তারেক রহমান বগুড়া-৬ ও ঢাকা-১৭ উভয় আসনে জয়ী', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: 'নির্বাচন কমিশন স্মার্টফোন ব্যবহারে নিষেধাজ্ঞা জারি করেছে', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 0 },
+      { title: '৯.৫৮ লাখ নিরাপত্তা কর্মী সারাদেশে মোতায়েন', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 0 },
+      { title: 'এনসিপি ঢাকার কয়েকটি আসনে ডার্ক হর্স হিসেবে আবির্ভূত', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 0 },
+      { title: 'প্রথমবারের মতো পোস্টাল ভোটিং ও "নো ভোট" অপশন চালু', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 0 },
+      { title: 'বিকেল ৪:৩০-এ ভোটগ্রহণ শেষ — রাতের মধ্যে ফলাফল প্রত্যাশিত', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: 'কুড়িগ্রাম-৪: মোস্তাফিজুর রহমান ৭৫,৪২১ ভোটে জয়ী', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
+      { title: 'পটুয়াখালী-৩: নূরুল হক নূর স্বতন্ত্র প্রার্থী হিসেবে জয়ী', url: 'https://www.jamuna.tv/parliament-election-2026', breaking: 1 },
     ];
     for (const h of headlines) {
-      insertNews.run(h.title, h.url, 'The Daily Star', h.breaking);
+      insertNews.run(h.title, h.url, 'যমুনা টিভি', h.breaking);
     }
   });
   seedNews();

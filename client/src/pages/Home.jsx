@@ -13,39 +13,39 @@ const ELECTION_DATE = new Date('2026-02-12T01:30:00.000Z');
 const TABS = [
   { 
     id: 'official', 
-    label: 'Official EC', 
-    labelBn: 'ইসি অফিসিয়াল',
+    label: 'সরকারি ইসি', 
+    labelBn: 'সরকারি ইসি',
     icon: Shield, 
     color: '#22c55e',
     bgColor: 'bg-green-500/10',
     borderColor: 'border-green-500/30',
     textColor: 'text-green-400',
-    description: 'Verified EC Declared Results',
-    source: 'Bangladesh Election Commission (ecs.gov.bd)'
+    description: 'যাচাইকৃত ইসি ঘোষিত ফলাফল',
+    source: 'তথ্যসূত্র: যমুনা টিভি'
   },
   { 
     id: 'unofficial', 
-    label: 'News Portals', 
-    labelBn: 'নিউজ পোর্টাল',
+    label: 'অনানুষ্ঠানিক', 
+    labelBn: 'অনানুষ্ঠানিক',
     icon: Newspaper, 
     color: '#f97316',
     bgColor: 'bg-orange-500/10',
     borderColor: 'border-orange-500/30',
     textColor: 'text-orange-400',
-    description: 'Aggregated from 10 Sources',
-    source: 'electionwatchbd.com • election.results.com.bd • election.unb.com.bd • electionresult2026bd.com • votebd.org • onefiftyonebd.com • Daily Star • Prothom Alo • bdnews24'
+    description: 'সংকলিত ফলাফল',
+    source: 'তথ্যসূত্র: যমুনা টিভি'
   },
   { 
     id: 'prediction', 
-    label: 'AI Prediction', 
+    label: 'এআই পূর্বাভাস', 
     labelBn: 'এআই পূর্বাভাস',
     icon: Brain, 
     color: '#3b82f6',
     bgColor: 'bg-blue-500/10',
     borderColor: 'border-blue-500/30',
     textColor: 'text-blue-400',
-    description: 'Bayesian + FPTP Simulation',
-    source: 'IRI Polls • Innovision Surveys • Historical Data'
+    description: 'বেইসিয়ান + এফপিটিপি সিমুলেশন',
+    source: 'তথ্যসূত্র: যমুনা টিভি'
   },
 ];
 
@@ -96,6 +96,7 @@ export default function Home() {
           id: pred.party_id || pred.id,
           name: pred.party_name,
           short_name: pred.short_name,
+          name_bn: pred.name_bn,
           color: pred.color,
           displaySeats: pred.predicted_seats,
           confidence: pred.confidence,
@@ -132,11 +133,11 @@ export default function Home() {
               <Radio className="text-red-400" />
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
             </div>
-            Connecting Dots — Live
+            কানেক্টিং ডটস — লাইভ
             <span className="text-sm font-normal text-slate-400 font-bangla">লাইভ নির্বাচনী ফলাফল</span>
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            13th Jatiya Sangsad • 300 seats • {dashboard?.partySeats?.length || 0} parties contesting
+            ১৩তম জাতীয় সংসদ • ৩০০ আসন • {dashboard?.partySeats?.length || 0} দল প্রতিদ্বন্দ্বিতায়
           </p>
         </div>
         
@@ -145,15 +146,15 @@ export default function Home() {
             connected ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30'
           }`}>
             <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
-            {connected ? 'LIVE' : 'OFFLINE'}
+            {connected ? 'লাইভ' : 'অফলাইন'}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <Users size={12} />
-            12.76 Cr voters
+            ১২.৭৬ কোটি ভোটার
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <Clock size={12} />
-            Updated {getTimeSince(lastRefresh)}
+            আপডেট {getTimeSince(lastRefresh)}
           </div>
         </div>
       </div>
@@ -201,7 +202,7 @@ export default function Home() {
               <activeTabConfig.icon size={20} className={activeTabConfig.textColor} />
               <div>
                 <div className="font-bold flex items-center gap-2">
-                  {activeTabConfig.label} View
+                  {activeTabConfig.label} ভিউ
                   <span className="text-xs font-normal text-slate-400 font-bangla">{activeTabConfig.labelBn}</span>
                 </div>
                 <div className="text-xs text-slate-400">{activeTabConfig.description} • {activeTabConfig.source}</div>
@@ -223,10 +224,10 @@ export default function Home() {
             <div className="p-4 border-b border-white/5 flex items-center justify-between">
               <h2 className="font-bold flex items-center gap-2">
                 <Eye size={16} className={activeTabConfig.textColor} />
-                {activeTabConfig.label} Seat Distribution
+                {activeTabConfig.label} আসন বণ্টন
               </h2>
               <div className="text-xs text-slate-500">
-                Majority: 151 seats | AL: Suspended
+                সংখ্যাগরিষ্ঠতা: ১৫১ আসন | আওয়ামী লীগ: স্থগিত
               </div>
             </div>
             <D3TreeView 
@@ -261,8 +262,8 @@ function Top3LiveBoxes({ official, unofficial, prediction, seatRanges }) {
   const boxes = [
     {
       id: 'official',
-      label: 'Official EC',
-      labelBn: 'ইসি অফিসিয়াল',
+      label: 'সরকারি ইসি',
+      labelBn: 'সরকারি ইসি',
       icon: Shield,
       color: '#22c55e',
       bgGrad: 'from-green-500/15 to-green-900/5',
@@ -270,11 +271,11 @@ function Top3LiveBoxes({ official, unofficial, prediction, seatRanges }) {
       textColor: 'text-green-400',
       glowColor: 'shadow-green-500/10',
       data: official,
-      seatLabel: 'declared',
+      seatLabel: 'ঘোষিত',
     },
     {
       id: 'unofficial',
-      label: 'Unofficial',
+      label: 'অনানুষ্ঠানিক',
       labelBn: 'অনানুষ্ঠানিক',
       icon: Newspaper,
       color: '#f97316',
@@ -283,11 +284,11 @@ function Top3LiveBoxes({ official, unofficial, prediction, seatRanges }) {
       textColor: 'text-orange-400',
       glowColor: 'shadow-orange-500/10',
       data: unofficial,
-      seatLabel: 'leading',
+      seatLabel: 'এগিয়ে',
     },
     {
       id: 'prediction',
-      label: 'AI Prediction',
+      label: 'এআই পূর্বাভাস',
       labelBn: 'এআই পূর্বাভাস',
       icon: Brain,
       color: '#3b82f6',
@@ -296,7 +297,7 @@ function Top3LiveBoxes({ official, unofficial, prediction, seatRanges }) {
       textColor: 'text-blue-400',
       glowColor: 'shadow-blue-500/10',
       data: prediction,
-      seatLabel: 'predicted',
+      seatLabel: 'পূর্বাভাস',
     },
   ];
 
@@ -322,7 +323,7 @@ function Top3LiveBoxes({ official, unofficial, prediction, seatRanges }) {
               </div>
               <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: box.color }} />
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider">Live</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider">লাইভ</span>
               </div>
             </div>
 
@@ -333,7 +334,7 @@ function Top3LiveBoxes({ official, unofficial, prediction, seatRanges }) {
                   <div className="flex items-center gap-2.5">
                     <span className="text-base">{PARTY_MEDALS[i]}</span>
                     <div className="w-2.5 h-2.5 rounded-full border border-white/20" style={{ backgroundColor: party.color }} />
-                    <span className="font-semibold text-sm text-white">{party.short_name || party.name}</span>
+                    <span className="font-semibold text-sm text-white">{party.name_bn || party.short_name || party.name}</span>
                   </div>
                   <div className="text-right">
                     <div className="text-xl font-black" style={{ color: party.color }}>
@@ -345,7 +346,7 @@ function Top3LiveBoxes({ official, unofficial, prediction, seatRanges }) {
               )) : (
                 <div className="text-center py-4 text-slate-500 text-sm">
                   <Clock size={16} className="mx-auto mb-1 opacity-50" />
-                  Awaiting results
+                  ফলাফলের অপেক্ষায়
                 </div>
               )}
             </div>
@@ -354,8 +355,8 @@ function Top3LiveBoxes({ official, unofficial, prediction, seatRanges }) {
             {box.id === 'prediction' && box.data[0] && seatRanges && (
               <div className="mt-3 pt-3 border-t border-white/5">
                 <div className="flex items-center justify-between text-[10px] text-slate-500">
-                  <span>Range: {seatRanges[box.data[0]?.short_name]?.min || '?'}–{seatRanges[box.data[0]?.short_name]?.max || '?'}</span>
-                  <span>Majority: 151</span>
+                  <span>পরিসর: {seatRanges[box.data[0]?.short_name]?.min || '?'}–{seatRanges[box.data[0]?.short_name]?.max || '?'}</span>
+                  <span>সংখ্যাগরিষ্ঠতা: ১৫১</span>
                 </div>
               </div>
             )}
@@ -377,9 +378,9 @@ function Top3LiveBoxes({ official, unofficial, prediction, seatRanges }) {
                   })}
                 </div>
                 <div className="flex justify-between mt-1.5 text-[9px] text-slate-600">
-                  <span>0</span>
-                  <span className="text-slate-500">151 majority</span>
-                  <span>300</span>
+                  <span>০</span>
+                  <span className="text-slate-500">১৫১ সংখ্যাগরিষ্ঠতা</span>
+                  <span>৩০০</span>
                 </div>
               </div>
             )}
@@ -399,7 +400,7 @@ function NewsTicker({ news, breaking }) {
 
   // Combine breaking SSE news + scraped news
   const allNews = [
-    ...breaking.map(b => ({ title: b.message, source: 'SSE Live', is_breaking: 1, url: '' })),
+    ...breaking.map(b => ({ title: b.message, source: 'যমুনা টিভি', is_breaking: 1, url: '' })),
     ...(Array.isArray(news) ? news : []),
   ];
 
@@ -414,11 +415,11 @@ function NewsTicker({ news, breaking }) {
                 <Flame size={16} className="text-red-400" />
                 <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
               </div>
-              <span className="font-bold text-sm text-red-400">Live News</span>
-              <span className="text-[10px] text-slate-500 font-bangla">লাইভ খবর</span>
+              <span className="font-bold text-sm text-red-400">লাইভ খবর</span>
+              <span className="text-[10px] text-slate-500 font-bangla">সর্বশেষ আপডেট</span>
             </div>
             <span className="text-[9px] text-slate-600 px-2 py-0.5 rounded-full bg-white/5">
-              {allNews.length} items
+              {allNews.length} টি খবর
             </span>
           </div>
         </div>
@@ -456,9 +457,9 @@ function NewsTicker({ news, breaking }) {
                     <p className="text-xs text-slate-300 leading-relaxed">{item.title}</p>
                   )}
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[9px] text-slate-600">{item.source || 'The Daily Star'}</span>
+                    <span className="text-[9px] text-slate-600">{item.source || 'যমুনা টিভি'}</span>
                     {item.is_breaking ? (
-                      <span className="text-[8px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">Breaking</span>
+                      <span className="text-[8px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">জরুরি</span>
                     ) : null}
                   </div>
                 </div>
@@ -467,49 +468,51 @@ function NewsTicker({ news, breaking }) {
           )) : (
             <div className="p-6 text-center text-slate-600 text-xs">
               <Newspaper size={20} className="mx-auto mb-2 opacity-30" />
-              No live news yet
+              এখনো কোনো লাইভ খবর নেই
             </div>
           )}
         </div>
       </div>
 
-      {/* Prothom Alo Live Blog */}
+      {/* যমুনা টিভি লাইভ লিংক */}
       <div className="glass-card overflow-hidden">
         <a
-          href="https://www.prothomalo.com/bangladesh/fjyhgqm76s"
+          href="https://www.jamuna.tv/parliament-election-2026"
           target="_blank"
           rel="noopener noreferrer"
-          className="block p-3 border-b border-white/5 bg-gradient-to-r from-[#ED1C24]/10 to-transparent hover:from-[#ED1C24]/20 transition-colors"
+          className="block p-3 border-b border-white/5 bg-gradient-to-r from-[#1a73e8]/10 to-transparent hover:from-[#1a73e8]/20 transition-colors"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Newspaper size={16} className="text-[#ED1C24]" />
-                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+                <Newspaper size={16} className="text-[#1a73e8]" />
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping" />
               </div>
-              <span className="font-bold text-sm text-[#ED1C24]">প্রথম আলো</span>
-              <span className="text-[10px] text-slate-400">Live Blog</span>
+              <span className="font-bold text-sm text-[#1a73e8]">যমুনা টিভি</span>
+              <span className="text-[10px] text-slate-400">লাইভ নির্বাচন আপডেট</span>
             </div>
             <ExternalLink size={12} className="text-slate-500" />
           </div>
         </a>
-        <div className="relative">
-          <iframe
-            src="https://www.prothomalo.com/bangladesh/fjyhgqm76s"
-            title="Prothom Alo Live Election Blog"
-            className="w-full border-0"
-            style={{ height: '400px' }}
-            sandbox="allow-scripts allow-same-origin allow-popups"
-          />
-          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#0f172a] to-transparent pointer-events-none" />
+        <div className="p-4 text-center">
+          <a
+            href="https://www.jamuna.tv/parliament-election-2026"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1a73e8]/10 border border-[#1a73e8]/30 text-[#1a73e8] hover:bg-[#1a73e8]/20 transition-colors text-sm font-medium"
+          >
+            <Newspaper size={16} />
+            যমুনা টিভিতে সম্পূর্ণ নির্বাচনী কভারেজ দেখুন
+            <ExternalLink size={12} />
+          </a>
         </div>
         <a
-          href="https://www.prothomalo.com/bangladesh/fjyhgqm76s"
+          href="https://www.jamuna.tv/parliament-election-2026"
           target="_blank"
           rel="noopener noreferrer"
-          className="block p-2 text-center text-xs text-[#ED1C24] hover:bg-[#ED1C24]/10 transition-colors"
+          className="block p-2 text-center text-xs text-[#1a73e8] hover:bg-[#1a73e8]/10 transition-colors"
         >
-          পুরো লাইভ ব্লগ পড়ুন →
+          যমুনা টিভিতে পুরো কভারেজ দেখুন →
         </a>
       </div>
 
@@ -518,13 +521,10 @@ function NewsTicker({ news, breaking }) {
         <div className="text-[10px] text-slate-600 space-y-1.5">
           <div className="flex items-center gap-1.5">
             <BarChart3 size={10} className="text-slate-500" />
-            <span className="font-medium text-slate-500 uppercase tracking-wider">Data Sources</span>
+            <span className="font-medium text-slate-500 uppercase tracking-wider">তথ্যসূত্র</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {['ecs.gov.bd', 'prothomalo.com', 'electionwatchbd.com', 'votebd.org', 'onefiftyonebd.com', 'Daily Star', 'bdnews24'].map(src => (
-              <span key={src} className="px-1.5 py-0.5 rounded bg-white/[0.03] text-[9px]">{src}</span>
-            ))}
-            <span className="px-1.5 py-0.5 rounded bg-white/[0.03] text-[9px]">+4 more</span>
+            <span className="px-1.5 py-0.5 rounded bg-white/[0.03] text-[9px]">যমুনা টিভি</span>
           </div>
         </div>
       </div>
@@ -552,11 +552,11 @@ function MiniCountdown({ time }) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
               </span>
-              <span className="text-amber-400 font-bold text-sm">🗳️ VOTE COUNTING IN PROGRESS</span>
-              <span className="text-xs text-slate-400 font-bangla">ভোট গণনা চলছে</span>
+              <span className="text-amber-400 font-bold text-sm">🗳️ ভোট গণনা চলছে</span>
+              <span className="text-xs text-slate-400 font-bangla">ফলাফল আসছে</span>
             </div>
             <div className="text-xs text-slate-500">
-              Counting for {cHours}h {cMins}m | Results coming in…
+              গণনা চলছে {cHours} ঘণ্টা {cMins} মিনিট | ফলাফল আসছে…
             </div>
           </div>
         </div>
@@ -570,10 +570,10 @@ function MiniCountdown({ time }) {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
             </span>
-            <span className="text-green-400 font-bold text-sm">🗳️ VOTING IN PROGRESS — 12 Feb 2026</span>
+            <span className="text-green-400 font-bold text-sm">🗳️ ভোটদান চলছে — ১২ ফেব্রুয়ারি ২০২৬</span>
             <span className="text-xs text-slate-400 font-bangla">ভোট চলছে</span>
           </div>
-          <div className="text-xs text-slate-500">Polls close at 4:30 PM BDT</div>
+          <div className="text-xs text-slate-500">ভোট শেষ হবে বিকাল ৪:৩০ টায়</div>
         </div>
       </div>
     );
@@ -587,10 +587,10 @@ function MiniCountdown({ time }) {
     <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3 flex items-center justify-between">
       <div className="flex items-center gap-2 text-sm">
         <Calendar size={16} className="text-sky-400" />
-        <span className="text-slate-300 font-medium">⏱️ Election in</span>
-        <span className="font-black text-sky-400">{days}d {hours}h {minutes}m {seconds}s</span>
+        <span className="text-slate-300 font-medium">⏱️ নির্বাচন বাকি</span>
+        <span className="font-black text-sky-400">{days} দিন {hours} ঘণ্টা {minutes} মিনিট {seconds} সেকেন্ড</span>
       </div>
-      <div className="text-xs text-slate-500">12 Feb 2026 • 8:00 AM BDT</div>
+      <div className="text-xs text-slate-500">১২ ফেব্রুয়ারি ২০২৬ • সকাল ৮:০০ টা</div>
     </div>
   );
 }
@@ -606,25 +606,25 @@ function SummaryStats({ data, viewType, dashboard, tabConfig }) {
       <div className="glass-card p-6 text-center">
         <Clock size={24} className="mx-auto mb-2 text-slate-500 opacity-50" />
         <div className="text-sm text-slate-400">
-          {viewType === 'official' ? 'No EC results declared yet' : 'No results reported yet'}
+          {viewType === 'official' ? 'এখনো কোনো ইসি ফলাফল ঘোষিত হয়নি' : 'এখনো কোনো ভোট রিপোর্ট হয়নি'}
         </div>
-        <div className="text-xs text-slate-600 mt-1">Results will appear here automatically as they are published</div>
+        <div className="text-xs text-slate-600 mt-1">ফলাফল প্রকাশিত হলে এখানে স্বয়ংক্রিয়ভাবে দেখা যাবে</div>
       </div>
     );
   }
   
   const stats = viewType === 'prediction' 
     ? [
-        { label: 'Predicted Leader', value: leader?.short_name || '-', color: leader?.color },
-        { label: 'Predicted Seats', value: leader?.displaySeats || 0 },
-        { label: 'Win Probability', value: `${((leader?.winProbability || 0) * 100).toFixed(0)}%` },
-        { label: 'Model Confidence', value: `${((leader?.confidence || 0) * 100).toFixed(0)}%` },
+        { label: 'পূর্বাভাসে এগিয়ে', value: leader?.short_name || '-', color: leader?.color },
+        { label: 'পূর্বাভাসিত আসন', value: leader?.displaySeats || 0 },
+        { label: 'জয়ের সম্ভাবনা', value: `${((leader?.winProbability || 0) * 100).toFixed(0)}%` },
+        { label: 'মডেল আস্থা', value: `${((leader?.confidence || 0) * 100).toFixed(0)}%` },
       ]
     : [
-        { label: viewType === 'official' ? 'EC Declared' : 'Total Reporting', value: totalSeats, color: leader?.color },
-        { label: 'Leading Party', value: leader?.short_name || '-' },
-        { label: 'Leader Seats', value: leader?.displaySeats || 0 },
-        { label: 'Total Votes', value: formatNumber(dashboard?.totalVotes || 0) },
+        { label: viewType === 'official' ? 'ইসি ঘোষিত' : 'মোট রিপোর্টিং', value: totalSeats, color: leader?.color },
+        { label: 'এগিয়ে থাকা দল', value: leader?.short_name || '-' },
+        { label: 'শীর্ষ দলের আসন', value: leader?.displaySeats || 0 },
+        { label: 'মোট ভোট', value: formatNumber(dashboard?.totalVotes || 0) },
       ];
 
   return (
@@ -658,7 +658,7 @@ function D3TreeView({ data, viewType, accentColor }) {
 
     // Build hierarchy — use real party colors
     const treeData = {
-      name: viewType === 'prediction' ? 'AI Prediction' : viewType === 'official' ? 'EC Official' : 'News Sources',
+      name: viewType === 'prediction' ? 'এআই পূর্বাভাস' : viewType === 'official' ? 'ইসি সরকারি' : 'অনানুষ্ঠানিক',
       children: data.slice(0, 8).map(party => ({
         name: party.short_name,
         value: party.displaySeats,
@@ -757,8 +757,8 @@ function D3TreeView({ data, viewType, accentColor }) {
       {(!data || data.length === 0) ? (
         <div className="flex flex-col items-center justify-center h-[400px] text-slate-500">
           <Clock size={32} className="mb-3 opacity-30" />
-          <div className="text-sm font-medium">Awaiting Results</div>
-          <div className="text-xs text-slate-600 mt-1">Tree visualization will appear when results are published</div>
+          <div className="text-sm font-medium">ফলাফলের অপেক্ষায়</div>
+          <div className="text-xs text-slate-600 mt-1">ফলাফল প্রকাশিত হলে ট্রি ভিজ্যুয়ালাইজেশন দেখা যাবে</div>
         </div>
       ) : (
         <svg ref={svgRef} width="100%" height="400" />
@@ -773,8 +773,8 @@ function PartyCardsGrid({ data, viewType, tabConfig, seatRanges }) {
     return (
       <div className="glass-card p-8 text-center">
         <Clock size={24} className="mx-auto mb-2 text-slate-500 opacity-40" />
-        <div className="text-sm text-slate-400">No results to display yet</div>
-        <div className="text-xs text-slate-600 mt-1">Party cards will appear as results come in</div>
+        <div className="text-sm text-slate-400">এখনো কোনো ফলাফল প্রদর্শনের জন্য নেই</div>
+        <div className="text-xs text-slate-600 mt-1">ফলাফল আসলে পার্টি কার্ড এখানে দেখা যাবে</div>
       </div>
     );
   }
@@ -791,23 +791,23 @@ function PartyCardsGrid({ data, viewType, tabConfig, seatRanges }) {
               {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
             </span>
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: party.color }} />
-            <span className="font-bold">{party.short_name}</span>
+            <span className="font-bold">{party.name_bn || party.short_name}</span>
           </div>
           <div className="text-3xl font-black" style={{ color: party.color }}>
             {party.displaySeats}
           </div>
           <div className="text-xs text-slate-500 mt-1">
-            {viewType === 'prediction' ? 'predicted' : viewType === 'official' ? 'declared' : 'leading'}
+            {viewType === 'prediction' ? 'পূর্বাভাসিত' : viewType === 'official' ? 'ঘোষিত' : 'আসনে এগিয়ে'}
           </div>
           {viewType === 'prediction' && party.seatRange && (
             <div className="text-[10px] text-slate-500 mt-0.5">
-              Range: {party.seatRange.min}–{party.seatRange.max}
+              পরিসর: {party.seatRange.min}–{party.seatRange.max}
             </div>
           )}
           {viewType === 'prediction' && party.winProbability != null && (
             <div className="mt-2 text-xs">
               <div className="flex justify-between text-slate-400">
-                <span>Win prob</span>
+                <span>জয়ের সম্ভাবনা</span>
                 <span>{(party.winProbability * 100).toFixed(0)}%</span>
               </div>
               <div className="h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
@@ -820,12 +820,12 @@ function PartyCardsGrid({ data, viewType, tabConfig, seatRanges }) {
           )}
           {viewType === 'unofficial' && party.votePercentage > 0 && (
             <div className="text-xs text-slate-400 mt-1">
-              {party.votePercentage.toFixed(1)}% avg vote
+              {party.votePercentage.toFixed(1)}% গড় ভোট
             </div>
           )}
           {viewType === 'official' && party.isVerified && (
             <div className="flex items-center gap-1 text-xs text-green-400 mt-1">
-              <CheckCircle2 size={10} /> EC Verified
+              <CheckCircle2 size={10} /> ইসি যাচাইকৃত
             </div>
           )}
         </div>
@@ -843,7 +843,7 @@ function FreshnessBadge({ lastUpdate, viewType }) {
       isFresh ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'
     }`}>
       {isFresh ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-      {isFresh ? 'Fresh (<5min)' : `${minutes}m ago`}
+      {isFresh ? 'সাম্প্রতিক (<৫মিনিট)' : `${minutes} মিনিট আগে`}
     </div>
   );
 }
@@ -851,17 +851,17 @@ function FreshnessBadge({ lastUpdate, viewType }) {
 // ─── HELPERS ────────────────────────────────────────────
 function getTimeSince(date) {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return 'এইমাত্র';
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return `${minutes} মিনিট আগে`;
   const hours = Math.floor(minutes / 60);
-  return `${hours}h ago`;
+  return `${hours} ঘণ্টা আগে`;
 }
 
 function formatNumber(num) {
-  if (num >= 10000000) return (num / 10000000).toFixed(1) + ' Cr';
-  if (num >= 100000) return (num / 100000).toFixed(1) + ' L';
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  if (num >= 10000000) return (num / 10000000).toFixed(1) + ' কোটি';
+  if (num >= 100000) return (num / 100000).toFixed(1) + ' লক্ষ';
+  if (num >= 1000) return (num / 1000).toFixed(1) + ' হাজার';
   return num.toString();
 }
 

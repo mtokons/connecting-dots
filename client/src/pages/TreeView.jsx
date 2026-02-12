@@ -7,21 +7,20 @@ export default function TreeView() {
   const { data: parties, loading } = usePartyTree();
 
   if (loading) return <TreeSkeleton />;
-  if (!parties || parties.length === 0) return <div className="text-center py-20 text-slate-500">No data available</div>;
+  if (!parties || parties.length === 0) return <div className="text-center py-20 text-slate-500 font-bangla">কোনো তথ্য পাওয়া যায়নি</div>;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-3">
+          <h2 className="text-2xl font-bold flex items-center gap-3 font-bangla">
             <TreePine className="text-green-400" />
-            Party Trees — 13th Jatiya Sangsad
-            <span className="text-sm font-normal text-slate-400 font-bangla">পার্টি ট্রি ভিজ্যুয়ালাইজেশন</span>
+            পার্টি ট্রি — ১৩তম জাতীয় সংসদ
           </h2>
-          <p className="text-sm text-slate-400 mt-1">
-            Each party is a tree — bigger trees have more seats. Click to explore divisions & constituencies.
-            <span className="text-xs ml-2 text-slate-500">12 parties • AL suspended • 300 seats</span>
+          <p className="text-sm text-slate-400 mt-1 font-bangla">
+            প্রতিটি দল একটি ট্রি — বড় ট্রি মানে বেশি আসন। বিভাগ ও আসন দেখতে ক্লিক করুন।
+            <span className="text-xs ml-2 text-slate-500">১২ দল • আ.লী. স্থগিত • ৩০০ আসন</span>
           </p>
         </div>
       </div>
@@ -36,7 +35,7 @@ export default function TreeView() {
       {/* Parties with no seats */}
       {parties.filter(p => p.totalSeats === 0).length > 0 && (
         <div className="glass-card p-4">
-          <h3 className="text-sm font-bold text-slate-400 mb-3">Other Parties (0 seats leading)</h3>
+          <h3 className="text-sm font-bold text-slate-400 mb-3 font-bangla">অন্যান্য দল (০ আসনে এগিয়ে)</h3>
           <div className="flex flex-wrap gap-2">
             {parties.filter(p => p.totalSeats === 0).map(party => (
               <span key={party.id} className="party-badge" style={{ 
@@ -44,7 +43,7 @@ export default function TreeView() {
                 backgroundColor: party.color + '10',
                 color: party.color 
               }}>
-                {party.short_name}
+                {party.name_bn || party.short_name}
               </span>
             ))}
           </div>
@@ -79,9 +78,9 @@ function PartyTreeCard({ party, rank }) {
             style={{ backgroundColor: party.color }}
           />
           <div>
-            <h3 className="font-bold text-lg">{party.short_name}</h3>
+            <h3 className="font-bold text-lg">{party.name_bn || party.short_name}</h3>
             <p className="text-xs text-slate-400">{party.name}</p>
-            {party.leader && <p className="text-[10px] text-slate-500">Leader: {party.leader}</p>}
+            {party.leader && <p className="text-[10px] text-slate-500 font-bangla">নেতা: {party.leader}</p>}
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -89,11 +88,12 @@ function PartyTreeCard({ party, rank }) {
             <div className="text-2xl font-black" style={{ color: party.color }}>
               {party.totalSeats}
             </div>
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider">seats leading</div>
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bangla">আসনে এগিয়ে</div>
           </div>
           <button 
             onClick={() => setExpanded(!expanded)}
             className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+            aria-label={expanded ? 'ছোট করুন' : 'বড় করুন'}
           >
             {expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
@@ -111,19 +111,19 @@ function PartyTreeCard({ party, rank }) {
               width: `${(div.seats.length / party.totalSeats) * 100}%`,
               opacity: 0.3 + (div.seats.length / party.totalSeats) * 0.7,
             }}
-            title={`${div.name}: ${div.seats.length} seats`}
+            title={`${div.name}: ${div.seats.length} আসন`}
           />
         ))}
       </div>
 
       {/* D3 Tree */}
       <div ref={containerRef} className="relative" style={{ height }}>
-        <svg ref={svgRef} width="100%" height={height} />
+        <svg ref={svgRef} width="100%" height={height} aria-label="দলের ট্রি ভিজ্যুয়ালাইজেশন" />
         
         {/* Tooltip */}
         {tooltip && (
           <div 
-            className="absolute z-20 glass-card p-3 text-xs pointer-events-none"
+            className="absolute z-20 glass-card p-3 text-xs pointer-events-none font-bangla"
             style={{ 
               left: Math.min(tooltip.x, containerRef.current?.clientWidth - 200 || tooltip.x), 
               top: tooltip.y - 10 
@@ -132,14 +132,14 @@ function PartyTreeCard({ party, rank }) {
             <div className="font-bold text-white">{tooltip.name}</div>
             {tooltip.candidate && (
               <div className="text-slate-400 mt-1">
-                <div>🏆 {tooltip.candidate}</div>
-                <div>📊 {tooltip.votes?.toLocaleString()} votes ({tooltip.percentage}%)</div>
-                <div>📍 {tooltip.status}</div>
+                <div>🏆 প্রার্থী: {tooltip.candidate}</div>
+                <div>📊 {tooltip.votes?.toLocaleString('bn-BD')} ভোট ({tooltip.percentage}%)</div>
+                <div>📍 {tooltip.status === 'declared' ? 'ঘোষিত' : tooltip.status === 'counting' ? 'গণনা চলছে' : tooltip.status}</div>
               </div>
             )}
             {tooltip.division && !tooltip.candidate && (
               <div className="text-slate-400 mt-1">
-                {tooltip.seatCount} seats in {tooltip.division}
+                {tooltip.division} বিভাগে {tooltip.seatCount} আসন
               </div>
             )}
           </div>
@@ -149,8 +149,8 @@ function PartyTreeCard({ party, rank }) {
       {/* Division Legend */}
       <div className="px-4 py-3 border-t border-white/5 flex flex-wrap gap-2">
         {party.divisions.map(div => (
-          <span key={div.name} className="text-xs bg-white/5 px-2 py-1 rounded-md text-slate-400">
-            {div.name}: <span className="font-bold text-white">{div.seats.length}</span>
+          <span key={div.name} className="text-xs bg-white/5 px-2 py-1 rounded-md text-slate-400 font-bangla">
+            {div.name}: <span className="font-bold text-white">{div.seats.length}</span> আসন
           </span>
         ))}
       </div>
@@ -171,7 +171,7 @@ function drawTree(party, svgEl, containerEl, setTooltip, expanded) {
 
   // Build hierarchical data
   const treeData = {
-    name: party.short_name,
+    name: party.name_bn || party.short_name,
     color: party.color,
     children: party.divisions.map(div => ({
       name: div.name,

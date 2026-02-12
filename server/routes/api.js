@@ -304,25 +304,24 @@ router.get('/divisions', (req, res) => {
   }
 });
 
-// ─── GET NEWS TICKER ────────────────────────────────────
+// ─── নিউজ টিকার ────────────────────────────────
 router.get('/news', async (req, res) => {
   try {
     const db = getDb();
 
-    // First try to get news from database
+    // প্রথমে ডাটাবেস থেকে খবর নিন
     let news = [];
     try {
       news = db.prepare(`SELECT * FROM news_ticker ORDER BY created_at DESC LIMIT 20`).all();
     } catch (e) { /* table may not exist yet */ }
 
-    // If no news in DB, try live scrape from onefiftyonebd.com
+    // ডিবিতে খবর না থাকলে যমুনা টিভি থেকে লাইভ স্ক্র্যাপ করুন
     if (news.length === 0) {
       try {
-        const { OneFiftyOneBDScraper } = require('../scraper/scrapers');
-        const scraper = new OneFiftyOneBDScraper();
+        const { JamunaTVScraper } = require('../scraper/scrapers');
+        const scraper = new JamunaTVScraper();
         const liveNews = await scraper.scrapeNewsTicker();
 
-        // Store in database for caching
         if (liveNews.length > 0) {
           const insert = db.prepare(`INSERT OR IGNORE INTO news_ticker (title, url, source) VALUES (?, ?, ?)`);
           const insertAll = db.transaction(() => {
@@ -334,25 +333,25 @@ router.get('/news', async (req, res) => {
           news = liveNews.map((n, i) => ({ id: i + 1, ...n, created_at: n.timestamp }));
         }
       } catch (scrapeErr) {
-        console.error('News scrape error:', scrapeErr.message);
+        console.error('নিউজ স্ক্র্যাপ ত্রুটি:', scrapeErr.message);
       }
     }
 
-    // If still no news, return curated fallback
+    // এখনও খবর না থাকলে বাংলায় ফলব্যাক খবর
     if (news.length === 0) {
       news = [
-        { id: 1, title: 'Violence, vote manipulation allegations surface on eve of polls', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 1 },
-        { id: 2, title: 'Ballot stuffing allegations spark clash between Sylhet-3 Jamaat and BNP activists', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 1 },
-        { id: 3, title: '330 untrained Ansar-VDP members removed from election duty', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
-        { id: 4, title: 'Free, fair election key to Bangladesh\'s democratic future: EU observer mission chief', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
-        { id: 5, title: 'Election Commission warns against smartphone use inside polling booths', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
-        { id: 6, title: '12.77 crore voters to elect 13th Jatiya Sangsad today', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
-        { id: 7, title: 'Army deployment complete at all 300 constituencies', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
-        { id: 8, title: 'Record number of women candidates contesting this election', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
-        { id: 9, title: 'First-ever postal voting system debuts in Bangladesh election', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
-        { id: 10, title: 'NCP emerges as dark horse in several Dhaka constituencies', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
-        { id: 11, title: 'Voter turnout expected to exceed 75% according to EC estimates', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
-        { id: 12, title: 'International observers praise transparent EVM deployment', url: 'https://www.thedailystar.net/election-2026', source: 'The Daily Star', is_breaking: 0 },
+        { id: 1, title: '১৩তম জাতীয় সংসদ নির্বাচনে ২৯৯ আসনে ভোটগ্রহণ চলছে', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 1 },
+        { id: 2, title: '১২ কোটি ৭৭ লাখ ভোটার আজ ভোট দিচ্ছেন', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 1 },
+        { id: 3, title: 'তারেক রহমান বগুড়া-৬ ও ঢাকা-১৭ উভয় আসনে জয়ী', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 1 },
+        { id: 4, title: 'কুমিল্লা-৪: হাসনাত আবদুল্লাহ ১৫টি কেন্দ্রে এগিয়ে', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 1 },
+        { id: 5, title: 'কক্সবাজার-১: বিএনপির সালাহউদ্দিন আহমদ জয়ী', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 1 },
+        { id: 6, title: 'নির্বাচন কমিশন ভোটকেন্দ্রে স্মার্টফোন নিষিদ্ধ করেছে', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 0 },
+        { id: 7, title: '৯.৫৮ লাখ নিরাপত্তা কর্মী সারাদেশে মোতায়েন', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 0 },
+        { id: 8, title: 'এনসিপি ঢাকার কয়েকটি আসনে ডার্ক হর্স হিসেবে আবির্ভূত', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 0 },
+        { id: 9, title: 'প্রথমবারের মতো পোস্টাল ভোটিং ও "নো ভোট" অপশন চালু', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 0 },
+        { id: 10, title: 'বিকেল ৪:৩০-এ ভোটগ্রহণ শেষ — রাতের মধ্যে ফলাফল প্রত্যাশিত', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 1 },
+        { id: 11, title: 'ঝিনাইদহ-১: বিএনপির আসাদুজ্জামান ১,৭১,৫৯৮ ভোটে জয়ী', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 1 },
+        { id: 12, title: 'কুড়িগ্রাম-৪: মোস্তাফিজুর রহমান ৭৫,৪২১ ভোটে জয়ী', url: 'https://www.jamuna.tv/parliament-election-2026', source: 'যমুনা টিভি', is_breaking: 1 },
       ];
     }
 

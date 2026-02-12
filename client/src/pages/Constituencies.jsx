@@ -4,6 +4,8 @@ import { MapPin, Search, ChevronRight, X, CheckCircle2, Loader2, Filter } from '
 
 const DIVISIONS = ['All', 'Dhaka', 'Chattogram', 'Rajshahi', 'Khulna', 'Barishal', 'Sylhet', 'Rangpur', 'Mymensingh'];
 
+const toBanglaNum = (n) => String(n).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+
 export default function Constituencies() {
   const [division, setDivision] = useState('');
   const [status, setStatus] = useState('');
@@ -31,13 +33,13 @@ export default function Constituencies() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold flex items-center gap-3">
+        <h2 className="text-2xl font-bold flex items-center gap-3 font-bangla">
           <MapPin className="text-emerald-400" />
-          300 Constituencies
-          <span className="text-sm font-normal text-slate-400 font-bangla">৩০০ আসন</span>
+          ৩০০ আসন
+          <span className="text-sm font-normal text-slate-400 font-bangla">১৩তম জাতীয় সংসদ</span>
         </h2>
-        <p className="text-sm text-slate-400 mt-1">
-          Click on any constituency to see detailed results
+        <p className="text-sm text-slate-400 mt-1 font-bangla">
+          বিস্তারিত ফলাফল দেখতে যেকোনো আসনে ক্লিক করুন
         </p>
       </div>
 
@@ -55,7 +57,7 @@ export default function Constituencies() {
                   : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent'
               }`}
             >
-              {d}
+              {d === 'All' ? 'সকল বিভাগ' : d}
             </button>
           ))}
         </div>
@@ -64,33 +66,33 @@ export default function Constituencies() {
         <div className="flex gap-1">
           <button
             onClick={() => { setStatus(''); setPage(1); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all font-bangla ${
               !status
                 ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
                 : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent'
             }`}
           >
-            All Status
+            সকল অবস্থা
           </button>
           <button
             onClick={() => { setStatus('declared'); setPage(1); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all font-bangla ${
               status === 'declared'
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                 : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent'
             }`}
           >
-            ✅ Declared
+            ✅ ঘোষিত
           </button>
           <button
             onClick={() => { setStatus('counting'); setPage(1); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all font-bangla ${
               status === 'counting'
                 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                 : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent'
             }`}
           >
-            ⏳ Counting
+            ⏳ গণনা চলছে
           </button>
         </div>
 
@@ -99,10 +101,10 @@ export default function Constituencies() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search constituencies..."
+            placeholder="আসন খুঁজুন..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-sky-500/50"
+            className="w-full pl-9 pr-4 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-sky-500/50 font-bangla"
           />
         </div>
       </div>
@@ -114,6 +116,8 @@ export default function Constituencies() {
             Array.from({ length: 10 }, (_, i) => (
               <div key={i} className="glass-card h-16 shimmer" />
             ))
+          ) : filtered?.length === 0 ? (
+            <div className="text-center text-slate-400 py-12 font-bangla">কোনো ফলাফল পাওয়া যায়নি</div>
           ) : (
             filtered?.map(c => (
               <button
@@ -124,7 +128,7 @@ export default function Constituencies() {
                 }`}
               >
                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-sm font-bold text-slate-400">
-                  {c.id}
+                  {toBanglaNum(c.id)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -141,8 +145,8 @@ export default function Constituencies() {
                         }}
                       />
                     </div>
-                    <span className="text-[10px] text-slate-500">
-                      {c.centers_reported}/{c.total_centers} centers
+                    <span className="text-[10px] text-slate-500 font-bangla">
+                      {toBanglaNum(c.centers_reported)}/{toBanglaNum(c.total_centers)} কেন্দ্র
                     </span>
                   </div>
                 </div>
@@ -174,18 +178,18 @@ export default function Constituencies() {
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 rounded-lg bg-white/5 text-sm disabled:opacity-30 hover:bg-white/10"
+                className="px-4 py-2 rounded-lg bg-white/5 text-sm disabled:opacity-30 hover:bg-white/10 font-bangla"
               >
-                Previous
+                পূর্ববর্তী
               </button>
-              <span className="px-4 py-2 text-sm text-slate-400">
-                Page {page}
+              <span className="px-4 py-2 text-sm text-slate-400 font-bangla">
+                পৃষ্ঠা {toBanglaNum(page)}
               </span>
               <button
                 onClick={() => setPage(page + 1)}
-                className="px-4 py-2 rounded-lg bg-white/5 text-sm hover:bg-white/10"
+                className="px-4 py-2 rounded-lg bg-white/5 text-sm hover:bg-white/10 font-bangla"
               >
-                Next
+                পরবর্তী
               </button>
             </div>
           )}
@@ -196,11 +200,11 @@ export default function Constituencies() {
           <div className="hidden lg:block w-96">
             <div className="glass-card p-6 sticky top-24">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">
-                  {detail?.constituency?.name || 'Loading...'}
+                <h3 className="font-bold text-lg font-bangla">
+                  {detail?.constituency?.name || 'লোড হচ্ছে...'}
                 </h3>
-                <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-white/5">
-                  <X size={16} />
+                <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-white/5 text-xs font-bangla flex items-center gap-1">
+                  <X size={16} /> পেছনে
                 </button>
               </div>
 
@@ -210,10 +214,11 @@ export default function Constituencies() {
                 </div>
               ) : (
                 <>
-                  <div className="text-xs text-slate-400 mb-4">
+                  <div className="text-xs text-slate-400 mb-1 font-bold font-bangla">আসনের বিস্তারিত</div>
+                  <div className="text-xs text-slate-400 mb-4 font-bangla">
                     <span>{detail?.constituency?.division}</span> • 
                     <span> {detail?.constituency?.district}</span> • 
-                    <span> {detail?.constituency?.total_voters?.toLocaleString()} voters</span>
+                    <span> মোট ভোটার: {toBanglaNum(detail?.constituency?.total_voters?.toLocaleString() || '0')}</span>
                   </div>
 
                   <div className="space-y-3">
@@ -225,7 +230,7 @@ export default function Constituencies() {
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
-                          {i === 0 && <span className="text-xs">🏆</span>}
+                          {i === 0 && <span className="text-xs">🏆 এগিয়ে</span>}
                           <span className="font-bold text-sm">{r.candidate_name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
@@ -239,11 +244,11 @@ export default function Constituencies() {
                           >
                             {r.party_short}
                           </span>
-                          <span className="text-slate-400 font-bold">
-                            {r.votes?.toLocaleString()} votes
+                          <span className="text-slate-400 font-bold font-bangla">
+                            {toBanglaNum(r.votes?.toLocaleString() || '0')} ভোট
                           </span>
                           <span className="text-slate-500">
-                            ({r.vote_percentage}%)
+                            ({toBanglaNum(r.vote_percentage || 0)}%)
                           </span>
                         </div>
                         <div className="mt-2 h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -259,12 +264,16 @@ export default function Constituencies() {
                     ))}
                   </div>
 
+                  {detail?.results?.length === 0 && (
+                    <div className="text-center text-slate-500 py-6 font-bangla">ফলাফলের অপেক্ষায়</div>
+                  )}
+
                   {detail?.results?.[0] && (
-                    <div className="mt-4 pt-3 border-t border-white/5 text-xs text-slate-500">
-                      <div>Status: {detail.results[0].status}</div>
-                      <div>Centers: {detail.results[0].centers_reported}/{detail.results[0].total_centers}</div>
-                      <div>Source: {detail.results[0].source}</div>
-                      <div>Updated: {new Date(detail.results[0].updated_at).toLocaleString()}</div>
+                    <div className="mt-4 pt-3 border-t border-white/5 text-xs text-slate-500 font-bangla">
+                      <div>অবস্থা: {detail.results[0].status === 'declared' ? 'ঘোষিত' : detail.results[0].status === 'counting' ? 'গণনা চলছে' : detail.results[0].status === 'postponed' ? 'স্থগিত' : 'অপেক্ষমান'}</div>
+                      <div>কেন্দ্র রিপোর্টেড: {toBanglaNum(detail.results[0].centers_reported)}/{toBanglaNum(detail.results[0].total_centers)}</div>
+                      <div>সূত্র: {detail.results[0].source}</div>
+                      <div>সর্বশেষ আপডেট: {new Date(detail.results[0].updated_at).toLocaleString('bn-BD')}</div>
                     </div>
                   )}
                 </>

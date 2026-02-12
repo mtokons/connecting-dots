@@ -109,12 +109,12 @@ function initialize() {
       FOREIGN KEY (source_id) REFERENCES scrape_sources(id)
     );
 
-    -- News Ticker (live headlines from onefiftyonebd.com)
+    -- নিউজ টিকার (যমুনা টিভি থেকে লাইভ শিরোনাম)
     CREATE TABLE IF NOT EXISTS news_ticker (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       url TEXT,
-      source TEXT DEFAULT 'The Daily Star',
+      source TEXT DEFAULT 'যমুনা টিভি',
       category TEXT DEFAULT 'election',
       is_breaking INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP

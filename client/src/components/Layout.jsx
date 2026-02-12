@@ -7,12 +7,12 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/', label: 'Home', labelBn: 'হোম', icon: Home },
-  { path: '/dashboard', label: 'Dashboard', labelBn: 'ড্যাশবোর্ড', icon: LayoutDashboard },
-  { path: '/tree', label: 'Party Trees', labelBn: 'পার্টি ট্রি', icon: TreePine },
-  { path: '/constituencies', label: '300 Seats', labelBn: '৩০০ আসন', icon: MapPin },
-  { path: '/predictions', label: 'AI Predictions', labelBn: 'এআই পূর্বাভাস', icon: Brain },
-  { path: '/live', label: 'Live Studio', labelBn: 'লাইভ স্টুডিও', icon: Radio },
+  { path: '/', label: 'হোম', labelBn: 'হোম', icon: Home },
+  { path: '/dashboard', label: 'ড্যাশবোর্ড', labelBn: 'ড্যাশবোর্ড', icon: LayoutDashboard },
+  { path: '/tree', label: 'পার্টি ট্রি', labelBn: 'পার্টি ট্রি', icon: TreePine },
+  { path: '/constituencies', label: '৩০০ আসন', labelBn: '৩০০ আসন', icon: MapPin },
+  { path: '/predictions', label: 'এআই পূর্বাভাস', labelBn: 'এআই পূর্বাভাস', icon: Brain },
+  { path: '/live', label: 'লাইভ স্টুডিও', labelBn: 'লাইভ স্টুডিও', icon: Radio },
 ];
 
 export default function Layout({ children }) {
@@ -40,7 +40,7 @@ export default function Layout({ children }) {
       <header className="sticky top-0 z-50 glass-card border-x-0 border-t-0 rounded-none">
         <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-3 group" aria-label="হোম পেজে যান">
             <div className="relative">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -59,13 +59,13 @@ export default function Layout({ children }) {
                 Connecting Dots
               </h1>
               <p className="text-[10px] text-slate-400 -mt-0.5 font-bangla">
-                বাংলাদেশ নির্বাচন ২০২৬ • লাইভ
+                ১৩তম জাতীয় সংসদ নির্বাচন ২০২৬ • লাইভ
               </p>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1" aria-label="প্রধান নেভিগেশন">
             {navItems.map(item => {
               const Icon = item.icon;
               const active = location.pathname === item.path;
@@ -73,6 +73,8 @@ export default function Layout({ children }) {
                 <Link
                   key={item.path}
                   to={item.path}
+                  aria-label={item.labelBn}
+                  title={item.labelBn}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                     active
                       ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
@@ -88,33 +90,34 @@ export default function Layout({ children }) {
 
           {/* Right side */}
           <div className="flex items-center gap-3">
-            {/* Connection status */}
+            {/* সংযোগ স্থিতি */}
             <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
               connected ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
-            }`}>
+            }`} title={connected ? 'সরাসরি সংযুক্ত' : 'সংযোগ বিচ্ছিন্ন'}>
               {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
               <span className="hidden sm:inline">{connected ? 'LIVE' : 'OFFLINE'}</span>
             </div>
 
-            {/* LIVE indicator */}
-            <div className="hidden sm:flex items-center gap-2 bg-red-500/10 border border-red-500/30 px-3 py-1.5 rounded-full">
+            {/* সরাসরি সূচক */}
+            <div className="hidden sm:flex items-center gap-2 bg-red-500/10 border border-red-500/30 px-3 py-1.5 rounded-full" title="সরাসরি সম্প্রচার চলছে">
               <span className="live-dot" />
               <span className="text-xs font-bold text-red-400 tracking-wider">LIVE</span>
             </div>
 
-            {/* Mobile menu toggle */}
+            {/* মোবাইল মেনু টগল */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2 rounded-xl hover:bg-white/5"
+              aria-label={mobileMenuOpen ? 'মেনু বন্ধ করুন' : 'মেনু খুলুন'}
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* মোবাইল নেভিগেশন */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden px-4 pb-4 border-t border-white/5 pt-3">
+          <nav className="lg:hidden px-4 pb-4 border-t border-white/5 pt-3" aria-label="মোবাইল নেভিগেশন">
             <div className="grid grid-cols-2 gap-2">
               {navItems.map(item => {
                 const Icon = item.icon;
@@ -124,6 +127,7 @@ export default function Layout({ children }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
+                    aria-label={item.labelBn}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       active
                         ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
@@ -153,18 +157,18 @@ export default function Layout({ children }) {
         <div className="max-w-[1600px] mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">
             <p className="text-sm text-slate-500">
-              <span className="gradient-text font-bold">Connecting Dots</span> — AI-Powered Election Dashboard
+              <span className="gradient-text font-bold">Connecting Dots</span> — এআই-চালিত নির্বাচন ড্যাশবোর্ড
             </p>
             <p className="text-xs text-slate-600 mt-1">
-              Data sourced from public Bangladeshi news portals • Not an official election authority
+              তথ্যসূত্র: যমুনা টিভি • এটি কোনো সরকারি নির্বাচনী কর্তৃপক্ষ নয়
             </p>
           </div>
           <div className="flex items-center gap-4 text-xs text-slate-600">
-            <span>🇧🇩 Made for Bangladesh</span>
+            <span>🇧🇩 বাংলাদেশের জন্য তৈরি</span>
             <span>•</span>
-            <span>Open Source</span>
+            <span>ওপেন সোর্স</span>
             <span>•</span>
-            <span>Built with ❤️</span>
+            <span>❤️ দিয়ে তৈরি</span>
           </div>
         </div>
       </footer>

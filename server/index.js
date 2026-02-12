@@ -49,16 +49,15 @@ const partyCount = database.prepare('SELECT COUNT(*) as count FROM parties').get
 let needsReseed = partyCount.count === 0;
 try {
   database.prepare('SELECT COUNT(*) FROM news_ticker').get();
-  // Also check if latest scrape sources exist
-  const hasNewSource = database.prepare("SELECT COUNT(*) as count FROM scrape_sources WHERE name = 'OneFiftyOneBD'").get();
-  const hasPAEnglish = database.prepare("SELECT COUNT(*) as count FROM scrape_sources WHERE name = 'Prothom Alo English Live'").get();
-  if (hasNewSource.count === 0 || hasPAEnglish.count === 0) needsReseed = true;
+  // যমুনা টিভি সোর্স আছে কিনা চেক করুন
+  const hasJamunaTV = database.prepare("SELECT COUNT(*) as count FROM scrape_sources WHERE name = 'যমুনা টিভি'").get();
+  if (hasJamunaTV.count === 0) needsReseed = true;
 } catch (e) {
   needsReseed = true; // Table doesn't exist yet
 }
 
 if (needsReseed) {
-  console.log('📦 Database needs update — re-seeding with latest 2026 election data...');
+  console.log('📦 ডাটাবেস আপডেট প্রয়োজন — যমুনা টিভি তথ্য দিয়ে পুনরায় সিড করা হচ্ছে...');
   // Drop and recreate for clean state
   try {
     database.exec('DROP TABLE IF EXISTS scrape_log');
@@ -72,7 +71,7 @@ if (needsReseed) {
   } catch (e) { /* ignore */ }
   db.initialize();
   seedData();
-  console.log('✅ Database re-seeded successfully');
+  console.log('✅ ডাটাবেস সফলভাবে পুনরায় সিড করা হয়েছে');
 }
 
 // Schedule scraping every N minutes

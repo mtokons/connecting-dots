@@ -1,37 +1,17 @@
 const { getDb } = require('../db/database');
 const {
-  ElectionResultsBDScraper,
-  UNBElectionScraper,
-  ElectionResult2026Scraper,
-  ECSScraper,
-  DailyStarScraper,
-  ProthomAloScraper,
-  BdNews24Scraper,
-  VoteBDScraper,
-  OneFiftyOneBDScraper,
-  ElectionWatchBDScraper,
-  ProthomAloEnglishLiveScraper,
+  JamunaTVScraper,
   processScrapedResults,
 } = require('./scrapers');
 const { broadcastBreaking } = require('../routes/sse');
 
-// All active scrapers — priority order (primary → secondary)
+// একমাত্র তথ্যসূত্র: যমুনা টিভি
 const scrapers = [
-  new ProthomAloEnglishLiveScraper(), // en.prothomalo.com LIVE blog (confirmed results)
-  new ElectionWatchBDScraper(),      // electionwatchbd.com (real-time results)
-  new ElectionResultsBDScraper(),   // election.results.com.bd
-  new UNBElectionScraper(),         // election.unb.com.bd
-  new ElectionResult2026Scraper(),  // electionresult2026bd.com
-  new ECSScraper(),                 // ecs.gov.bd (official)
-  new DailyStarScraper(),           // thedailystar.net
-  new ProthomAloScraper(),          // prothomalo.com
-  new BdNews24Scraper(),            // bdnews24.com
-  new VoteBDScraper(),              // votebd.org (SHUJAN)
-  new OneFiftyOneBDScraper(),       // onefiftyonebd.com (projections + ticker)
+  new JamunaTVScraper(),
 ];
 
 /**
- * Run all scrapers and process results
+ * সকল স্ক্র্যাপার চালান এবং ফলাফল প্রক্রিয়া করুন
  */
 async function scrapeAllSources() {
   const db = getDb();
@@ -39,11 +19,11 @@ async function scrapeAllSources() {
   let totalUpdated = 0;
   let totalNew = 0;
 
-  console.log(`🔄 Running ${scrapers.length} scrapers...`);
+  console.log(`🔄 যমুনা টিভি থেকে তথ্য সংগ্রহ করা হচ্ছে...`);
 
   for (const scraper of scrapers) {
     try {
-      console.log(`  📰 Scraping: ${scraper.name} (${scraper.url})`);
+      console.log(`  📰 স্ক্র্যাপিং: ${scraper.name} (${scraper.url})`);
       const results = await scraper.scrape();
 
       if (results.length > 0) {
@@ -52,21 +32,20 @@ async function scrapeAllSources() {
         totalUpdated += updated;
         totalNew += newResults;
 
-        // Log to database
         const source = db.prepare('SELECT id FROM scrape_sources WHERE name = ?').get(scraper.name);
         if (source) {
           scraper.logResult(db, source.id, results.length);
         }
-        console.log(`    ✅ Found ${results.length} results (${updated} updated, ${newResults} new)`);
+        console.log(`    ✅ ${results.length} ফলাফল পাওয়া গেছে (${updated} আপডেট, ${newResults} নতুন)`);
       } else {
-        console.log(`    ℹ️  No results found`);
+        console.log(`    ℹ️  কোনো ফলাফল পাওয়া যায়নি`);
         const source = db.prepare('SELECT id FROM scrape_sources WHERE name = ?').get(scraper.name);
         if (source) {
           scraper.logResult(db, source.id, 0);
         }
       }
     } catch (err) {
-      console.error(`    ❌ Error: ${err.message}`);
+      console.error(`    ❌ ত্রুটি: ${err.message}`);
       const source = db.prepare('SELECT id FROM scrape_sources WHERE name = ?').get(scraper.name);
       if (source) {
         scraper.logResult(db, source.id, 0, err.message);
@@ -74,40 +53,20 @@ async function scrapeAllSources() {
     }
   }
 
-  // Update counting status based on real scraped data
   updateCountingStatus();
   checkForDeclaredSeats();
 
-  console.log(`📊 Scrape summary: ${totalResults} results, ${totalUpdated} updated, ${totalNew} new`);
+  console.log(`📊 সারসংক্ষেপ: ${totalResults} ফলাফল, ${totalUpdated} আপডেট, ${totalNew} নতুন`);
   return { totalResults, totalUpdated, totalNew };
 }
 
-/**
- * Update vote counting status based on real scraped data
- * Marks constituencies as 'counting' when they receive first votes,
- * and 'declared' when marked so by source data
- */
 function updateCountingStatus() {
   const db = getDb();
+  db.prepare(`UPDATE results SET status = 'counting' WHERE status = 'waiting' AND votes > 0`).run();
 
-  // Mark constituencies with votes > 0 as 'counting' (if still 'waiting')
-  db.prepare(`
-    UPDATE results SET status = 'counting'
-    WHERE status = 'waiting'
-    AND votes > 0
-  `).run();
-
-  // Update vote percentages for constituencies being counted
-  const counting = db.prepare(`
-    SELECT DISTINCT constituency_id FROM results
-    WHERE status = 'counting'
-  `).all();
-
+  const counting = db.prepare(`SELECT DISTINCT constituency_id FROM results WHERE status = 'counting'`).all();
   for (const { constituency_id } of counting) {
-    const totalVotes = db.prepare(`
-      SELECT SUM(votes) as total FROM results WHERE constituency_id = ?
-    `).get(constituency_id);
-
+    const totalVotes = db.prepare(`SELECT SUM(votes) as total FROM results WHERE constituency_id = ?`).get(constituency_id);
     if (totalVotes && totalVotes.total > 0) {
       const candidates = db.prepare(`SELECT id, votes FROM results WHERE constituency_id = ?`).all(constituency_id);
       for (const c of candidates) {
@@ -118,15 +77,10 @@ function updateCountingStatus() {
   }
 }
 
-/**
- * Check for newly declared seats and broadcast breaking news
- */
 function checkForDeclaredSeats() {
   const db = getDb();
-
   const declared = db.prepare(`
-    SELECT
-      co.name as constituency, c.name as winner, p.short_name as party, r.votes
+    SELECT co.name as constituency, c.name as winner, p.short_name as party, r.votes
     FROM results r
     JOIN candidates c ON c.id = r.candidate_id
     JOIN constituencies co ON co.id = r.constituency_id
@@ -143,7 +97,7 @@ function checkForDeclaredSeats() {
 
   for (const seat of declared) {
     broadcastBreaking(
-      `🏆 ${seat.constituency}: ${seat.winner} (${seat.party}) wins with ${seat.votes.toLocaleString()} votes!`
+      `🏆 ${seat.constituency}: ${seat.winner} (${seat.party}) ${seat.votes.toLocaleString()} ভোটে জয়ী!`
     );
   }
 }
