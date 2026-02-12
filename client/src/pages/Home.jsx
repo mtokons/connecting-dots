@@ -473,6 +473,46 @@ function NewsTicker({ news, breaking }) {
         </div>
       </div>
 
+      {/* Prothom Alo Live Blog */}
+      <div className="glass-card overflow-hidden">
+        <a
+          href="https://www.prothomalo.com/bangladesh/fjyhgqm76s"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block p-3 border-b border-white/5 bg-gradient-to-r from-[#ED1C24]/10 to-transparent hover:from-[#ED1C24]/20 transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Newspaper size={16} className="text-[#ED1C24]" />
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+              </div>
+              <span className="font-bold text-sm text-[#ED1C24]">প্রথম আলো</span>
+              <span className="text-[10px] text-slate-400">Live Blog</span>
+            </div>
+            <ExternalLink size={12} className="text-slate-500" />
+          </div>
+        </a>
+        <div className="relative">
+          <iframe
+            src="https://www.prothomalo.com/bangladesh/fjyhgqm76s"
+            title="Prothom Alo Live Election Blog"
+            className="w-full border-0"
+            style={{ height: '400px' }}
+            sandbox="allow-scripts allow-same-origin allow-popups"
+          />
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#0f172a] to-transparent pointer-events-none" />
+        </div>
+        <a
+          href="https://www.prothomalo.com/bangladesh/fjyhgqm76s"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block p-2 text-center text-xs text-[#ED1C24] hover:bg-[#ED1C24]/10 transition-colors"
+        >
+          পুরো লাইভ ব্লগ পড়ুন →
+        </a>
+      </div>
+
       {/* Source Attribution */}
       <div className="glass-card p-3">
         <div className="text-[10px] text-slate-600 space-y-1.5">
@@ -481,7 +521,7 @@ function NewsTicker({ news, breaking }) {
             <span className="font-medium text-slate-500 uppercase tracking-wider">Data Sources</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {['ecs.gov.bd', 'electionwatchbd.com', 'votebd.org', 'onefiftyonebd.com', 'Daily Star', 'bdnews24'].map(src => (
+            {['ecs.gov.bd', 'prothomalo.com', 'electionwatchbd.com', 'votebd.org', 'onefiftyonebd.com', 'Daily Star', 'bdnews24'].map(src => (
               <span key={src} className="px-1.5 py-0.5 rounded bg-white/[0.03] text-[9px]">{src}</span>
             ))}
             <span className="px-1.5 py-0.5 rounded bg-white/[0.03] text-[9px]">+4 more</span>

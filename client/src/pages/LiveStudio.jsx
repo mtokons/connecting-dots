@@ -232,27 +232,44 @@ export default function LiveStudio() {
             </div>
           </div>
 
-          {/* How to Use */}
-          <div className="glass-card p-4">
-            <h3 className="text-sm font-bold mb-3">📺 How to Watch Live</h3>
-            <ol className="text-xs text-slate-400 space-y-2">
-              <li className="flex gap-2">
-                <span className="text-sky-400 font-bold">1.</span>
-                Click any suggested channel above
-              </li>
-              <li className="flex gap-2">
-                <span className="text-sky-400 font-bold">2.</span>
-                Copy the video ID from the URL
-              </li>
-              <li className="flex gap-2">
-                <span className="text-sky-400 font-bold">3.</span>
-                Paste it in the input field and click Load
-              </li>
-              <li className="flex gap-2">
-                <span className="text-sky-400 font-bold">4.</span>
-                Watch live coverage with real-time data!
-              </li>
-            </ol>
+          {/* Prothom Alo Live Blog Feed */}
+          <div className="glass-card overflow-hidden">
+            <a
+              href="https://www.prothomalo.com/bangladesh/fjyhgqm76s"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block p-3 border-b border-white/5 bg-gradient-to-r from-[#ED1C24]/10 to-transparent hover:from-[#ED1C24]/20 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Radio size={14} className="text-[#ED1C24]" />
+                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+                  </div>
+                  <span className="font-bold text-sm text-[#ED1C24]">প্রথম আলো</span>
+                  <span className="text-[10px] text-slate-400">Live</span>
+                </div>
+                <ExternalLink size={12} className="text-slate-500" />
+              </div>
+            </a>
+            <div className="relative">
+              <iframe
+                src="https://www.prothomalo.com/bangladesh/fjyhgqm76s"
+                title="Prothom Alo Live Blog"
+                className="w-full border-0"
+                style={{ height: '300px' }}
+                sandbox="allow-scripts allow-same-origin allow-popups"
+              />
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#0f172a] to-transparent pointer-events-none" />
+            </div>
+            <a
+              href="https://www.prothomalo.com/bangladesh/fjyhgqm76s"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block p-2 text-center text-[10px] text-[#ED1C24] hover:bg-[#ED1C24]/10 transition-colors font-bangla"
+            >
+              পুরো লাইভ ব্লগ পড়ুন →
+            </a>
           </div>
         </div>
       </div>
