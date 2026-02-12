@@ -32,8 +32,8 @@ const TABS = [
     bgColor: 'bg-orange-500/10',
     borderColor: 'border-orange-500/30',
     textColor: 'text-orange-400',
-    description: 'Aggregated from 9 Sources',
-    source: 'election.results.com.bd • election.unb.com.bd • electionresult2026bd.com • votebd.org • onefiftyonebd.com • Daily Star • Prothom Alo • bdnews24'
+    description: 'Aggregated from 10 Sources',
+    source: 'electionwatchbd.com • election.results.com.bd • election.unb.com.bd • electionresult2026bd.com • votebd.org • onefiftyonebd.com • Daily Star • Prothom Alo • bdnews24'
   },
   { 
     id: 'prediction', 
@@ -480,7 +480,7 @@ function NewsTicker({ news, breaking }) {
             <span className="font-medium text-slate-500 uppercase tracking-wider">Data Sources</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {['ecs.gov.bd', 'votebd.org', 'onefiftyonebd.com', 'Daily Star', 'bdnews24'].map(src => (
+            {['ecs.gov.bd', 'electionwatchbd.com', 'votebd.org', 'onefiftyonebd.com', 'Daily Star', 'bdnews24'].map(src => (
               <span key={src} className="px-1.5 py-0.5 rounded bg-white/[0.03] text-[9px]">{src}</span>
             ))}
             <span className="px-1.5 py-0.5 rounded bg-white/[0.03] text-[9px]">+4 more</span>
@@ -494,11 +494,46 @@ function NewsTicker({ news, breaking }) {
 // ─── MINI COUNTDOWN ─────────────────────────────────────
 function MiniCountdown({ time }) {
   const diff = ELECTION_DATE - time;
+  const COUNTING_START = new Date('2026-02-12T10:30:00.000Z'); // 4:30 PM BDT
+  const countingStarted = time >= COUNTING_START;
+  
   if (diff <= 0) {
+    if (countingStarted) {
+      // After 4:30 PM BDT — counting has started
+      const countingTime = time - COUNTING_START;
+      const cHours = Math.floor(countingTime / 3600000);
+      const cMins = Math.floor((countingTime % 3600000) / 60000);
+      return (
+        <div className="bg-gradient-to-r from-red-500/10 via-amber-500/10 to-green-500/10 border border-amber-500/30 rounded-xl p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+              <span className="text-amber-400 font-bold text-sm">🗳️ VOTE COUNTING IN PROGRESS</span>
+              <span className="text-xs text-slate-400 font-bangla">ভোট গণনা চলছে</span>
+            </div>
+            <div className="text-xs text-slate-500">
+              Counting for {cHours}h {cMins}m | Results coming in…
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
-      <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 text-center">
-        <span className="text-green-400 font-bold text-sm">🗳️ VOTING IN PROGRESS — 12 Feb 2026</span>
-        <span className="text-xs text-slate-400 ml-2 font-bangla">ভোট চলছে</span>
+      <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            </span>
+            <span className="text-green-400 font-bold text-sm">🗳️ VOTING IN PROGRESS — 12 Feb 2026</span>
+            <span className="text-xs text-slate-400 font-bangla">ভোট চলছে</span>
+          </div>
+          <div className="text-xs text-slate-500">Polls close at 4:30 PM BDT</div>
+        </div>
       </div>
     );
   }

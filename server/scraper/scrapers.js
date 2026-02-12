@@ -446,6 +446,54 @@ class OneFiftyOneBDScraper extends BaseScraper {
   }
 }
 
+// ─── 10. ELECTIONWATCHBD.COM SCRAPER ─────────────────────
+// Source: https://electionwatchbd.com — US-based nonprofit election monitoring
+// Real-time results, constituency data, candidate comparison
+class ElectionWatchBDScraper extends BaseScraper {
+  constructor() {
+    super('ElectionWatchBD', 'https://electionwatchbd.com/results');
+  }
+
+  async scrape() {
+    const $ = await this.fetch();
+    if (!$) return [];
+    const results = [];
+
+    // Try main results overview
+    $('.seat-card, .result-row, .constituency-result, tr, .card').each((i, el) => {
+      try {
+        const seat = $(el).find('.seat-name, .constituency, td:first-child, h4, h5').text().trim();
+        const winner = $(el).find('.winner, .candidate-name, .leading, td:nth-child(2)').text().trim();
+        const party = $(el).find('.party, .party-name, td:nth-child(3), .badge').text().trim();
+        const votes = parseInt(($(el).find('.votes, .count, .vote-count, td:nth-child(4)').text() || '0').replace(/,/g, '')) || 0;
+        if (seat && winner && (seat.includes('-') || seat.match(/^[\u0980-\u09FF]/))) {
+          results.push({ constituency: seat, candidate: winner, party, votes, source: this.name });
+        }
+      } catch (e) { /* skip */ }
+    });
+
+    // Also try seat-wise results page
+    if (results.length === 0) {
+      const $seats = await this.fetch('https://electionwatchbd.com/results/seats');
+      if ($seats) {
+        $seats('.seat-card, .result-row, tr, .card, .accordion-item').each((i, el) => {
+          try {
+            const seat = $seats(el).find('.seat-name, .constituency, td:first-child, h4, h5, .title').text().trim();
+            const winner = $seats(el).find('.winner, .candidate-name, .leading, td:nth-child(2)').text().trim();
+            const party = $seats(el).find('.party, .party-name, td:nth-child(3), .badge').text().trim();
+            const votes = parseInt(($seats(el).find('.votes, .count, td:nth-child(4)').text() || '0').replace(/,/g, '')) || 0;
+            if (seat && winner) {
+              results.push({ constituency: seat, candidate: winner, party, votes, source: this.name });
+            }
+          } catch (e) { /* skip */ }
+        });
+      }
+    }
+
+    return results;
+  }
+}
+
 // ─── RESULT PROCESSOR ────────────────────────────────────
 function processScrapedResults(results) {
   const db = getDb();
@@ -500,5 +548,6 @@ module.exports = {
   BdNews24Scraper,
   VoteBDScraper,
   OneFiftyOneBDScraper,
+  ElectionWatchBDScraper,
   processScrapedResults,
 };

@@ -9,12 +9,14 @@ const {
   BdNews24Scraper,
   VoteBDScraper,
   OneFiftyOneBDScraper,
+  ElectionWatchBDScraper,
   processScrapedResults,
 } = require('./scrapers');
 const { broadcastBreaking } = require('../routes/sse');
 
 // All active scrapers — priority order (primary → secondary)
 const scrapers = [
+  new ElectionWatchBDScraper(),      // electionwatchbd.com (real-time results)
   new ElectionResultsBDScraper(),   // election.results.com.bd
   new UNBElectionScraper(),         // election.unb.com.bd
   new ElectionResult2026Scraper(),  // electionresult2026bd.com
@@ -70,8 +72,8 @@ async function scrapeAllSources() {
     }
   }
 
-  // Simulate live vote counting updates for demo (will be replaced by real data)
-  simulateLiveUpdates();
+  // Update counting status based on real scraped data
+  updateCountingStatus();
   checkForDeclaredSeats();
 
   console.log(`📊 Scrape summary: ${totalResults} results, ${totalUpdated} updated, ${totalNew} new`);
@@ -79,64 +81,36 @@ async function scrapeAllSources() {
 }
 
 /**
- * Simulate live vote counting for demo
- * Simulates realistic vote distribution patterns for the 2026 election
+ * Update vote counting status based on real scraped data
+ * Marks constituencies as 'counting' when they receive first votes,
+ * and 'declared' when marked so by source data
  */
-function simulateLiveUpdates() {
+function updateCountingStatus() {
   const db = getDb();
 
-  // Pick random constituencies still counting
-  const constituencies = db.prepare(`
+  // Mark constituencies with votes > 0 as 'counting' (if still 'waiting')
+  db.prepare(`
+    UPDATE results SET status = 'counting'
+    WHERE status = 'waiting'
+    AND votes > 0
+  `).run();
+
+  // Update vote percentages for constituencies being counted
+  const counting = db.prepare(`
     SELECT DISTINCT constituency_id FROM results
     WHERE status = 'counting'
-    ORDER BY RANDOM()
-    LIMIT 10
   `).all();
 
-  for (const { constituency_id } of constituencies) {
-    const candidates = db.prepare(`
-      SELECT r.id, r.votes, c.party_id, p.short_name as party
-      FROM results r
-      JOIN candidates c ON c.id = r.candidate_id
-      JOIN parties p ON p.id = c.party_id
-      WHERE r.constituency_id = ?
-    `).all(constituency_id);
+  for (const { constituency_id } of counting) {
+    const totalVotes = db.prepare(`
+      SELECT SUM(votes) as total FROM results WHERE constituency_id = ?
+    `).get(constituency_id);
 
-    let totalVotes = 0;
-    for (const c of candidates) {
-      // Give BNP slight edge, Jamaat moderate, others less — reflecting polls
-      let multiplier = 1;
-      if (c.party === 'BNP') multiplier = 1.4;
-      else if (c.party === 'JI') multiplier = 1.2;
-      else if (c.party === 'NCP') multiplier = 0.9;
-      else if (c.party === 'JP') multiplier = 0.6;
-      else if (c.party === 'IAB') multiplier = 0.5;
-
-      const increment = Math.floor(Math.random() * 2000 * multiplier);
-      const newVotes = c.votes + increment;
-      totalVotes += newVotes;
-      db.prepare('UPDATE results SET votes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .run(newVotes, c.id);
-    }
-
-    // Update percentages
-    for (const c of candidates) {
-      const updated = db.prepare('SELECT votes FROM results WHERE id = ?').get(c.id);
-      const pct = ((updated.votes / totalVotes) * 100).toFixed(2);
-      db.prepare('UPDATE results SET vote_percentage = ? WHERE id = ?').run(parseFloat(pct), c.id);
-    }
-
-    // Advance center count
-    const result = db.prepare('SELECT centers_reported, total_centers FROM results WHERE constituency_id = ? LIMIT 1')
-      .get(constituency_id);
-    if (result && result.centers_reported < result.total_centers) {
-      const newCenters = Math.min(result.centers_reported + 1, result.total_centers);
-      db.prepare('UPDATE results SET centers_reported = ? WHERE constituency_id = ?')
-        .run(newCenters, constituency_id);
-
-      if (newCenters >= result.total_centers) {
-        db.prepare("UPDATE results SET status = 'declared' WHERE constituency_id = ?")
-          .run(constituency_id);
+    if (totalVotes && totalVotes.total > 0) {
+      const candidates = db.prepare(`SELECT id, votes FROM results WHERE constituency_id = ?`).all(constituency_id);
+      for (const c of candidates) {
+        const pct = ((c.votes / totalVotes.total) * 100).toFixed(2);
+        db.prepare('UPDATE results SET vote_percentage = ? WHERE id = ?').run(parseFloat(pct), c.id);
       }
     }
   }

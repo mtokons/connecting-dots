@@ -385,6 +385,7 @@ export default function Dashboard() {
         <h3 className="text-sm font-bold text-slate-400 mb-3">Data Sources & Attribution</h3>
         <div className="flex flex-wrap gap-2">
           {[
+            { name: 'electionwatchbd.com', type: 'Primary' },
             { name: 'election.results.com.bd', type: 'Primary' },
             { name: 'election.unb.com.bd', type: 'Primary' },
             { name: 'electionresult2026bd.com', type: 'Primary' },
@@ -409,17 +410,32 @@ export default function Dashboard() {
 function CountdownBanner({ time, electionInfo }) {
   const diff = ELECTION_DATE - time;
   const isElectionDay = diff <= 0;
+  const COUNTING_START = new Date('2026-02-12T10:30:00.000Z'); // 4:30 PM BDT
+  const countingStarted = time >= COUNTING_START;
 
   if (isElectionDay) {
     return (
       <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-sky-500/10 border-green-500/30">
         <div className="text-center">
-          <h2 className="text-3xl font-black text-green-400 mb-2">🗳️ ELECTION DAY 🗳️</h2>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <h2 className="text-3xl font-black text-green-400">
+              {countingStarted ? '📊 RESULTS COMING IN' : '🗳️ ELECTION DAY 🗳️'}
+            </h2>
+          </div>
           <p className="text-lg text-slate-300 font-bangla">১৩তম জাতীয় সংসদ নির্বাচন ২০২৬</p>
-          <p className="text-sm text-slate-400 mt-1">13th Jatiya Sangsad Election • 12 February 2026</p>
+          <p className="text-sm text-slate-400 mt-1">
+            {countingStarted 
+              ? 'Vote counting in progress • Results from 10 live sources' 
+              : '13th Jatiya Sangsad Election • 12 February 2026'}
+          </p>
           <div className="mt-3 text-sm text-slate-400">
             <Clock size={14} className="inline mr-1" />
             {time.toLocaleTimeString('en-US', { hour12: true, timeZone: 'Asia/Dhaka' })} BDT
+            {countingStarted && <span className="ml-2 text-amber-400">• Counting since 4:30 PM</span>}
           </div>
         </div>
       </div>

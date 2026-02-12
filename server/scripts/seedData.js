@@ -298,6 +298,7 @@ function seedData() {
     { name: 'bdnews24', url: 'https://bdnews24.com/election', type: 'news' },
     { name: 'VoteBD (SHUJAN)', url: 'https://www.votebd.org/election-result/all-candidate-list?election=695b5e3e4678b44577fb9ab7', type: 'primary' },
     { name: 'OneFiftyOneBD', url: 'https://www.onefiftyonebd.com/', type: 'aggregator' },
+    { name: 'ElectionWatchBD', url: 'https://electionwatchbd.com/results', type: 'primary' },
     { name: 'Dhaka Tribune', url: 'https://www.dhakatribune.com/election', type: 'news' },
     { name: 'The Business Standard', url: 'https://www.tbsnews.net/election', type: 'news' },
   ];
@@ -308,13 +309,10 @@ function seedData() {
   });
   insertSources();
 
-  // ─── GENERATE SAMPLE RESULTS ───────────────────────────
-  // Reflecting predicted outcome:
-  //   BNP & Allies: ~185 seats | Jamaat & NCP: ~80 | JP: ~10 | IAB: ~5 | Others: ~20
-  const generateResults = db.prepare(`
-    INSERT OR REPLACE INTO results (constituency_id, candidate_id, votes, vote_percentage, status, centers_reported, total_centers, source)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  // ─── REAL-TIME MODE: No simulated results ─────────────
+  // Election Day: 12 Feb 2026 — results will come from live scrapers
+  // Seed only the structure — candidates with 0 votes, status 'waiting'
+  // Real data flows in from 10 scraper sources as EC declares results
 
   const candidates = db.prepare(`
     SELECT c.id as candidate_id, c.constituency_id, c.party_id, p.short_name as party
@@ -329,66 +327,59 @@ function seedData() {
     byConstituency[c.constituency_id].push(c);
   }
 
-  // Party strength weights — BNP leads, Jamaat second, then NCP/JP/IAB
-  const partyWeight = {
-    'BNP': 1.5,   // Leading in all polls
-    'JI': 1.1,    // Strong second (especially youth/Gen-Z)
-    'NCP': 0.65,  // NCP — student movement party, allied with Jamaat
-    'JP': 0.45,   // Jatiya Party — moderate but weakened
-    'IAB': 0.35,  // Islami Andolon — niche
-    'IND': 0.5,   // 256 independents — some strong local candidates
-    'JSD': 0.2,
-    'WP': 0.15,
-    'BKP': 0.15,
-    'NO': 0.15,
-    'AB': 0.2,
-    'KM': 0.15,
-  };
+  const generateResults = db.prepare(`
+    INSERT OR REPLACE INTO results (constituency_id, candidate_id, votes, vote_percentage, status, centers_reported, total_centers, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
 
   const insertResults = db.transaction(() => {
     for (const [constId, cands] of Object.entries(byConstituency)) {
       const totalCenters = 20 + Math.floor(Math.random() * 30);
-      const progress = Math.random();
-      let status, centersReported;
+      let status = 'waiting';
 
-      if (progress < 0.25) {
-        status = 'counting';
-        centersReported = Math.floor(totalCenters * Math.random() * 0.5);
-      } else if (progress < 0.6) {
-        status = 'counting';
-        centersReported = Math.floor(totalCenters * (0.5 + Math.random() * 0.4));
-      } else {
-        status = 'declared';
-        centersReported = totalCenters;
-      }
-
-      // Sherpur-3 is postponed
+      // Sherpur-3 is postponed (candidate death)
       const constRow = constituencyRows.find(r => r.id === parseInt(constId));
       if (constRow && constRow.name === 'Sherpur-3') {
         status = 'postponed';
-        centersReported = 0;
       }
 
-      let totalVotes = 0;
-      const votes = cands.map(c => {
-        const weight = partyWeight[c.party] || 0.1;
-        // Add randomness but maintain party strength distribution
-        const baseVotes = Math.floor((30000 + Math.random() * 60000) * weight);
-        totalVotes += baseVotes;
-        return baseVotes;
-      });
-
-      for (let i = 0; i < cands.length; i++) {
-        const pct = totalVotes > 0 ? ((votes[i] / totalVotes) * 100).toFixed(2) : '0.00';
+      for (const c of cands) {
         generateResults.run(
-          parseInt(constId), cands[i].candidate_id,
-          votes[i], parseFloat(pct), status,
-          centersReported, totalCenters, 'seed-2026'
+          parseInt(constId), c.candidate_id,
+          0, 0, status,
+          0, totalCenters, 'awaiting-ec'
         );
       }
     }
   });
   insertResults();
+
+  // Seed initial news ticker with real election-day headlines
+  const insertNews = db.prepare(`INSERT OR IGNORE INTO news_ticker (title, url, source, is_breaking) VALUES (?, ?, ?, ?)`);
+  const seedNews = db.transaction(() => {
+    const headlines = [
+      { title: 'Voting underway across 299 constituencies for 13th Jatiya Sangsad', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
+      { title: '12.77 crore voters to elect 13th Jatiya Sangsad today', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
+      { title: 'Violence, vote manipulation allegations surface on eve of polls', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      { title: 'Ballot stuffing allegations spark clash between Sylhet-3 Jamaat and BNP activists', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
+      { title: '330 untrained Ansar-VDP members removed from election duty', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      { title: 'EU observer mission chief: Free, fair election key to Bangladesh democratic future', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      { title: 'EC warns against smartphone use inside polling booths', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      { title: 'Army deployment complete at all 300 constituencies', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      { title: 'First-ever postal voting system debuts in Bangladesh election', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      { title: 'Counting begins after polls close at 4:30 PM — results expected by late night', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
+      { title: 'Tension at Narayanganj polling centre over alleged ballot tampering', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
+      { title: 'Altercation erupts between Chattogram-8 Jamaat candidate and BNP activists', url: 'https://www.thedailystar.net/election-2026', breaking: 1 },
+      { title: 'Dhaka may become the bellwether again — local factors may trump symbols', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      { title: 'NCP emerges as dark horse in several Dhaka constituencies', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      { title: 'Record 9.58 lakh security personnel deployed nationwide', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      { title: 'Prof Yunus: Let people decide who they want in power', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+    ];
+    for (const h of headlines) {
+      insertNews.run(h.title, h.url, 'The Daily Star', h.breaking);
+    }
+  });
+  seedNews();
 
   const totalCandidates = db.prepare('SELECT COUNT(*) as c FROM candidates').get().c;
   console.log('✅ Seed data loaded — Bangladesh Election 2026');
