@@ -82,9 +82,10 @@ export default function Home() {
         })).filter(p => p.displaySeats > 0).sort((a, b) => b.displaySeats - a.displaySeats);
       
       case 'unofficial':
+        // Only show parties that actually have seats with votes > 0
         return parties.map(party => ({
           ...party,
-          displaySeats: party.totalSeats,
+          displaySeats: party.totalSeats || 0,
           votePercentage: party.seats?.reduce((sum, s) => sum + (s.vote_percentage || 0), 0) / (party.seats?.length || 1),
           isVerified: false,
         })).filter(p => p.displaySeats > 0).sort((a, b) => b.displaySeats - a.displaySeats);
@@ -559,6 +560,19 @@ function SummaryStats({ data, viewType, dashboard, tabConfig }) {
   const totalSeats = data.reduce((sum, p) => sum + (p.displaySeats || 0), 0);
   const leader = data[0];
   
+  // Show awaiting state when no results yet (for official/unofficial)
+  if (viewType !== 'prediction' && totalSeats === 0) {
+    return (
+      <div className="glass-card p-6 text-center">
+        <Clock size={24} className="mx-auto mb-2 text-slate-500 opacity-50" />
+        <div className="text-sm text-slate-400">
+          {viewType === 'official' ? 'No EC results declared yet' : 'No results reported yet'}
+        </div>
+        <div className="text-xs text-slate-600 mt-1">Results will appear here automatically as they are published</div>
+      </div>
+    );
+  }
+  
   const stats = viewType === 'prediction' 
     ? [
         { label: 'Predicted Leader', value: leader?.short_name || '-', color: leader?.color },
@@ -700,13 +714,30 @@ function D3TreeView({ data, viewType, accentColor }) {
 
   return (
     <div ref={containerRef} className="w-full" style={{ minHeight: 400 }}>
-      <svg ref={svgRef} width="100%" height="400" />
+      {(!data || data.length === 0) ? (
+        <div className="flex flex-col items-center justify-center h-[400px] text-slate-500">
+          <Clock size={32} className="mb-3 opacity-30" />
+          <div className="text-sm font-medium">Awaiting Results</div>
+          <div className="text-xs text-slate-600 mt-1">Tree visualization will appear when results are published</div>
+        </div>
+      ) : (
+        <svg ref={svgRef} width="100%" height="400" />
+      )}
     </div>
   );
 }
 
 // ─── PARTY CARDS GRID ───────────────────────────────────
 function PartyCardsGrid({ data, viewType, tabConfig, seatRanges }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="glass-card p-8 text-center">
+        <Clock size={24} className="mx-auto mb-2 text-slate-500 opacity-40" />
+        <div className="text-sm text-slate-400">No results to display yet</div>
+        <div className="text-xs text-slate-600 mt-1">Party cards will appear as results come in</div>
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
       {data.slice(0, 10).map((party, i) => (

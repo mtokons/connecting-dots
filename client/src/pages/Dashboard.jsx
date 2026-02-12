@@ -93,7 +93,7 @@ export default function Dashboard() {
         {/* Horizontal stacked bar showing all parties */}
         <div className="mb-4">
           <div className="flex rounded-xl overflow-hidden h-12 bg-black/30">
-            {partySeats.map(party => {
+            {partySeats.length > 0 ? partySeats.map(party => {
               const width = (party.seats_leading / 300) * 100;
               if (width < 0.3) return null;
               return (
@@ -114,7 +114,12 @@ export default function Dashboard() {
                   )}
                 </div>
               );
-            })}
+            }) : (
+              <div className="flex items-center justify-center w-full text-slate-500 text-sm">
+                <Clock size={16} className="mr-2 opacity-50" />
+                Awaiting results — no seats declared yet
+              </div>
+            )}
           </div>
           {/* Majority marker */}
           <div className="relative h-6">
@@ -133,7 +138,7 @@ export default function Dashboard() {
 
         {/* Party breakdown table */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {partySeats.map((party, i) => (
+          {partySeats.length > 0 ? partySeats.map((party, i) => (
             <div key={party.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-colors">
               <div className="text-lg font-black text-slate-600 w-6">
                 {i + 1}
@@ -169,7 +174,13 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="col-span-2 text-center py-8 text-slate-500">
+              <Clock size={24} className="mx-auto mb-2 opacity-40" />
+              <div className="text-sm">No results published yet</div>
+              <div className="text-xs text-slate-600 mt-1">Party results will appear here as the EC declares them</div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -213,6 +224,7 @@ export default function Dashboard() {
             <BarChart3 size={18} className="text-sky-400" />
             Seats by Party
           </h3>
+          {partySeats.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={partySeats.slice(0, 8)} layout="vertical" margin={{ left: 10 }}>
               <XAxis type="number" stroke="#334155" domain={[0, 300]} />
@@ -233,6 +245,12 @@ export default function Dashboard() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] text-slate-500">
+              <BarChart3 size={32} className="mb-2 opacity-20" />
+              <div className="text-sm">No data yet</div>
+            </div>
+          )}
         </div>
 
         {/* Pie Chart */}
@@ -241,6 +259,7 @@ export default function Dashboard() {
             <Target size={18} className="text-violet-400" />
             Vote Share Distribution
           </h3>
+          {partySeats.filter(p => p.total_votes > 0).length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -272,6 +291,12 @@ export default function Dashboard() {
               />
             </PieChart>
           </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] text-slate-500">
+              <Target size={32} className="mb-2 opacity-20" />
+              <div className="text-sm">No votes counted yet</div>
+            </div>
+          )}
         </div>
       </div>
 

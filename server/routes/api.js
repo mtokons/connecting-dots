@@ -22,6 +22,7 @@ router.get('/dashboard', (req, res) => {
         SELECT r.constituency_id, r.candidate_id, r.votes, r.status,
           ROW_NUMBER() OVER (PARTITION BY r.constituency_id ORDER BY r.votes DESC) as rn
         FROM results r
+        WHERE r.votes > 0
       )
       SELECT
         p.id, p.name, p.short_name, p.color, p.name_bn,
@@ -80,6 +81,7 @@ router.get('/parties/tree', (req, res) => {
           SELECT r.constituency_id, r.candidate_id,
             ROW_NUMBER() OVER (PARTITION BY r.constituency_id ORDER BY r.votes DESC) as rn
           FROM results r
+          WHERE r.votes > 0
         )
         SELECT
           c.constituency_id,
@@ -171,6 +173,7 @@ router.get('/constituencies', (req, res) => {
         SELECT r.constituency_id, r.candidate_id,
           ROW_NUMBER() OVER (PARTITION BY r.constituency_id ORDER BY r.votes DESC) as rn
         FROM results r
+        WHERE r.votes > 0
       )
       SELECT
         co.id, co.name, co.division, co.district, co.total_voters,
@@ -178,10 +181,10 @@ router.get('/constituencies', (req, res) => {
         r.votes as leading_votes, r.vote_percentage, r.status,
         r.centers_reported, r.total_centers
       FROM constituencies co
-      JOIN leading l ON l.constituency_id = co.id AND l.rn = 1
-      JOIN results r ON r.constituency_id = l.constituency_id AND r.candidate_id = l.candidate_id
-      JOIN candidates c ON c.id = l.candidate_id
-      JOIN parties p ON p.id = c.party_id
+      LEFT JOIN leading l ON l.constituency_id = co.id AND l.rn = 1
+      LEFT JOIN results r ON r.constituency_id = l.constituency_id AND r.candidate_id = l.candidate_id
+      LEFT JOIN candidates c ON c.id = l.candidate_id
+      LEFT JOIN parties p ON p.id = c.party_id
       WHERE 1=1
     `;
 
@@ -278,6 +281,7 @@ router.get('/divisions', (req, res) => {
           SELECT r.constituency_id, r.candidate_id,
             ROW_NUMBER() OVER (PARTITION BY r.constituency_id ORDER BY r.votes DESC) as rn
           FROM results r
+          WHERE r.votes > 0
         )
         SELECT
           p.short_name, p.color, p.name,
