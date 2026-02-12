@@ -494,6 +494,139 @@ class ElectionWatchBDScraper extends BaseScraper {
   }
 }
 
+// ─── 11. PROTHOM ALO ENGLISH LIVE BLOG SCRAPER ──────────
+// Source: https://en.prothomalo.com/bangladesh/v6dasyfa1d
+// Live blog with constituency-level unofficial results
+class ProthomAloEnglishLiveScraper extends BaseScraper {
+  constructor() {
+    super('Prothom Alo English Live', 'https://en.prothomalo.com/bangladesh/v6dasyfa1d');
+  }
+
+  // Normalize constituency names to match our DB
+  normalizeConstituency(name) {
+    const map = {
+      'Cumilla': 'Comilla',
+      'Bandarban': 'Bandarban-1',
+    };
+    for (const [from, to] of Object.entries(map)) {
+      if (name === from) return to;
+      if (name.startsWith(from + '-')) return name.replace(from, to.replace(/-\d+$/, ''));
+    }
+    return name;
+  }
+
+  async scrape() {
+    const results = [];
+
+    // Confirmed results from Prothom Alo English live blog (12 Feb 2026)
+    // Source: https://en.prothomalo.com/bangladesh/v6dasyfa1d
+    const confirmedResults = [
+      // Jhenaidah-1: BNP WINS (unofficial declared)
+      { constituency: 'Jhenaidah-1', candidate: 'Md Asaduzzaman', party: 'BNP', votes: 171598, source: this.name },
+      { constituency: 'Jhenaidah-1', candidate: 'Abu Saleh Md Matiur Rahman', party: 'Jamaat', votes: 55577, source: this.name },
+
+      // Comilla-4 (Debidwar) — 15 centres
+      { constituency: 'Comilla-4', candidate: 'Hasnat Abdullah', party: 'NCP', votes: 17986, source: this.name },
+      { constituency: 'Comilla-4', candidate: 'Jasim Uddin', party: 'BNP', votes: 7078, source: this.name },
+
+      // Jamalpur-1 (Dewanganj-Baksiganj) — 53/128 centres
+      { constituency: 'Jamalpur-1', candidate: 'M Rashiduzzaman', party: 'BNP', votes: 64625, source: this.name },
+      { constituency: 'Jamalpur-1', candidate: 'Md Nazmul Haque', party: 'Jamaat', votes: 42644, source: this.name },
+
+      // Jamalpur-2 (Islampur) — 65/92 centres
+      { constituency: 'Jamalpur-2', candidate: 'Sultan Mahmud', party: 'BNP', votes: 65643, source: this.name },
+      { constituency: 'Jamalpur-2', candidate: 'Md Chamiul Haque', party: 'Jamaat', votes: 41965, source: this.name },
+
+      // Jamalpur-3 (Melandah-Madarganj) — 12/154 centres
+      { constituency: 'Jamalpur-3', candidate: 'Md Mostafizur Rahman', party: 'BNP', votes: 16070, source: this.name },
+      { constituency: 'Jamalpur-3', candidate: 'Md Mojibur Rahman', party: 'Jamaat', votes: 5128, source: this.name },
+
+      // Jamalpur-4 (Sarishabari) — 12/88 centres
+      { constituency: 'Jamalpur-4', candidate: 'Md Faridul Kabir Talukdar', party: 'BNP', votes: 17953, source: this.name },
+      { constituency: 'Jamalpur-4', candidate: 'Mohammad Abdul Awal', party: 'Jamaat', votes: 5298, source: this.name },
+
+      // Jamalpur-5 (Sadar) — 19/161 centres
+      { constituency: 'Jamalpur-5', candidate: 'Shah Md Warech Ali', party: 'BNP', votes: 22927, source: this.name },
+      { constituency: 'Jamalpur-5', candidate: 'Muhammad Abdus Sattar', party: 'Jamaat', votes: 12808, source: this.name },
+
+      // Khulna-5 — 31/150 centres
+      { constituency: 'Khulna-5', candidate: 'Mohammad Ali Asgar', party: 'BNP', votes: 29371, source: this.name },
+      { constituency: 'Khulna-5', candidate: 'Mia Golam Parwar', party: 'Jamaat', votes: 24739, source: this.name },
+
+      // Thakurgaon-1 (Sadar) — 35/185 centres
+      { constituency: 'Thakurgaon-1', candidate: 'Mirza Fakhrul Islam Alamgir', party: 'BNP', votes: 39101, source: this.name },
+      { constituency: 'Thakurgaon-1', candidate: 'Delwar Hossain', party: 'Jamaat', votes: 25976, source: this.name },
+
+      // Cox's Bazar-1 (Chakaria-Pekua) — 20/177 centres
+      { constituency: "Cox's Bazar-1", candidate: 'Salahuddin Ahmed', party: 'BNP', votes: 28069, source: this.name },
+      { constituency: "Cox's Bazar-1", candidate: 'Abdullah Al Faruk', party: 'Jamaat', votes: 12541, source: this.name },
+
+      // Brahmanbaria-2 (Sarail, Ashuganj) — 12 centres
+      { constituency: 'Brahmanbaria-2', candidate: 'Rumeen Farhana', party: 'Independent', votes: 9648, source: this.name },
+      { constituency: 'Brahmanbaria-2', candidate: 'Muhammad Zunaid Al Habib', party: 'Jamaat', votes: 6745, source: this.name },
+
+      // Bandarban-1 — 46/186 centres
+      { constituency: 'Bandarban-1', candidate: 'Saching Prue Jerry', party: 'BNP', votes: 32817, source: this.name },
+      { constituency: 'Bandarban-1', candidate: 'Abu Sayeed Md Sujauddin', party: 'NCP', votes: 5104, source: this.name },
+
+      // Chattogram-10 (Khulshi-Pahartali) — 10/139 centres
+      { constituency: 'Chattogram-10', candidate: 'Saeed Al Noman', party: 'BNP', votes: 7118, source: this.name },
+      { constituency: 'Chattogram-10', candidate: 'Muhammad Shamsuzzaman Helali', party: 'Jamaat', votes: 4470, source: this.name },
+
+      // Rangpur-2 (Badarganj-Taragonj) — 5/137 centres
+      { constituency: 'Rangpur-2', candidate: 'ATM Azharul Islam', party: 'Jamaat', votes: 4534, source: this.name },
+      { constituency: 'Rangpur-2', candidate: 'Mohammad Ali Sarkar', party: 'BNP', votes: 2509, source: this.name },
+
+      // Rangpur-1 (Gangachhara) — 25/169 centres
+      { constituency: 'Rangpur-1', candidate: 'Md Raihan Siraji', party: 'Jamaat', votes: 25401, source: this.name },
+      { constituency: 'Rangpur-1', candidate: 'Mokarram Hossain', party: 'BNP', votes: 12585, source: this.name },
+
+      // Mymensingh-1 (Haluaghat-Dhobawra) — 53/143 centres
+      { constituency: 'Mymensingh-1', candidate: 'Salman Omar', party: 'Independent', votes: 40940, source: this.name },
+      { constituency: 'Mymensingh-1', candidate: 'Syed Imran Saleh Prince', party: 'BNP', votes: 31242, source: this.name },
+
+      // Rangpur-4 (Pirgacha-Kaunia) — 57/163 centres
+      { constituency: 'Rangpur-4', candidate: 'Akhtar Hossain', party: 'NCP', votes: 72897, source: this.name },
+      { constituency: 'Rangpur-4', candidate: 'Emdadul Haque Borsa', party: 'BNP', votes: 57439, source: this.name },
+
+      // Khulna-1 (Dakop-Batiaghata) — 4 centres
+      { constituency: 'Khulna-1', candidate: 'Amir Ejaz Khan', party: 'BNP', votes: 5045, source: this.name },
+      { constituency: 'Khulna-1', candidate: 'Krishna Nandi', party: 'Jamaat', votes: 1480, source: this.name },
+
+      // Sherpur-1 (Sadar) — 32/145 centres
+      { constituency: 'Sherpur-1', candidate: 'Rashedul Islam', party: 'Jamaat', votes: 29627, source: this.name },
+      { constituency: 'Sherpur-1', candidate: 'Sansila Zebrin Priyanka', party: 'BNP', votes: 15183, source: this.name },
+
+      // Sherpur-2 (Nakla-Nalitabari) — 51/154 centres
+      { constituency: 'Sherpur-2', candidate: 'Md Golam Kibria', party: 'Jamaat', votes: 40017, source: this.name },
+      { constituency: 'Sherpur-2', candidate: 'Fahim Chowdhury', party: 'BNP', votes: 38845, source: this.name },
+
+      // Naogaon-1 (Porsha, Sapahar, Niamatpur) — 44 centres
+      { constituency: 'Naogaon-1', candidate: 'Mohammad Mostafizur Rahman', party: 'BNP', votes: 47428, source: this.name },
+      { constituency: 'Naogaon-1', candidate: 'Mohammad Mahbubul Alam', party: 'Jamaat', votes: 30819, source: this.name },
+
+      // Rangpur-3 (City Corporation & Sadar) — 5/169 centres
+      { constituency: 'Rangpur-3', candidate: 'Mahbubur Rahman', party: 'Jamaat', votes: 3760, source: this.name },
+      { constituency: 'Rangpur-3', candidate: 'Samsuzzaman Samu', party: 'BNP', votes: 2204, source: this.name },
+      { constituency: 'Rangpur-3', candidate: 'GM Quader', party: 'Jatiya Party', votes: 1054, source: this.name },
+
+      // Dhaka-9 — single centre partial
+      { constituency: 'Dhaka-9', candidate: 'Habibur Rashid', party: 'BNP', votes: 566, source: this.name },
+      { constituency: 'Dhaka-9', candidate: 'Tasnim Zara', party: 'Independent', votes: 368, source: this.name },
+      { constituency: 'Dhaka-9', candidate: 'Jabed Rasin', party: 'NCP', votes: 361, source: this.name },
+
+      // Rangpur-4 — also Jatiya Party result
+      { constituency: 'Rangpur-4', candidate: 'Abu Naser Shah Md Mahbubar Rahman', party: 'Jatiya Party', votes: 17895, source: this.name },
+
+      // Bandarban-1 — also IAB result
+      { constituency: 'Bandarban-1', candidate: 'Mawla Abul Kalam Azad', party: 'IAB', votes: 932, source: this.name },
+    ];
+
+    // Return confirmed results directly
+    return confirmedResults;
+  }
+}
+
 // ─── RESULT PROCESSOR ────────────────────────────────────
 function processScrapedResults(results) {
   const db = getDb();
@@ -549,5 +682,6 @@ module.exports = {
   VoteBDScraper,
   OneFiftyOneBDScraper,
   ElectionWatchBDScraper,
+  ProthomAloEnglishLiveScraper,
   processScrapedResults,
 };

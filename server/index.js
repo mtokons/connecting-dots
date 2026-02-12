@@ -49,9 +49,10 @@ const partyCount = database.prepare('SELECT COUNT(*) as count FROM parties').get
 let needsReseed = partyCount.count === 0;
 try {
   database.prepare('SELECT COUNT(*) FROM news_ticker').get();
-  // Also check if OneFiftyOneBD source exists
+  // Also check if latest scrape sources exist
   const hasNewSource = database.prepare("SELECT COUNT(*) as count FROM scrape_sources WHERE name = 'OneFiftyOneBD'").get();
-  if (hasNewSource.count === 0) needsReseed = true;
+  const hasPAEnglish = database.prepare("SELECT COUNT(*) as count FROM scrape_sources WHERE name = 'Prothom Alo English Live'").get();
+  if (hasNewSource.count === 0 || hasPAEnglish.count === 0) needsReseed = true;
 } catch (e) {
   needsReseed = true; // Table doesn't exist yet
 }

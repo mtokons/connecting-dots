@@ -10,12 +10,14 @@ const {
   VoteBDScraper,
   OneFiftyOneBDScraper,
   ElectionWatchBDScraper,
+  ProthomAloEnglishLiveScraper,
   processScrapedResults,
 } = require('./scrapers');
 const { broadcastBreaking } = require('../routes/sse');
 
 // All active scrapers — priority order (primary → secondary)
 const scrapers = [
+  new ProthomAloEnglishLiveScraper(), // en.prothomalo.com LIVE blog (confirmed results)
   new ElectionWatchBDScraper(),      // electionwatchbd.com (real-time results)
   new ElectionResultsBDScraper(),   // election.results.com.bd
   new UNBElectionScraper(),         // election.unb.com.bd

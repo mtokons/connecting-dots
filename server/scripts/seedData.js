@@ -299,6 +299,7 @@ function seedData() {
     { name: 'VoteBD (SHUJAN)', url: 'https://www.votebd.org/election-result/all-candidate-list?election=695b5e3e4678b44577fb9ab7', type: 'primary' },
     { name: 'OneFiftyOneBD', url: 'https://www.onefiftyonebd.com/', type: 'aggregator' },
     { name: 'ElectionWatchBD', url: 'https://electionwatchbd.com/results', type: 'primary' },
+    { name: 'Prothom Alo English Live', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', type: 'news' },
     { name: 'Dhaka Tribune', url: 'https://www.dhakatribune.com/election', type: 'news' },
     { name: 'The Business Standard', url: 'https://www.tbsnews.net/election', type: 'news' },
   ];
@@ -374,6 +375,17 @@ function seedData() {
       { title: 'NCP emerges as dark horse in several Dhaka constituencies', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
       { title: 'Record 9.58 lakh security personnel deployed nationwide', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
       { title: 'Prof Yunus: Let people decide who they want in power', url: 'https://www.thedailystar.net/election-2026', breaking: 0 },
+      // Prothom Alo English live blog results updates
+      { title: 'Jhenaidah-1: BNP\'s Asaduzzaman wins unofficially with 171,598 votes', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: 'BNP candidates lead in all 5 Jamalpur constituencies', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: 'Cumilla-4: Hasnat Abdullah leads with 17,986 votes in 15 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: 'Thakurgaon-1: Mirza Fakhrul leads with 39,101 votes from 35 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: 'Brahmanbaria-2: Independent Rumeen Farhana leads in 12 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: 'Rangpur-4: NCP\'s Akhtar Hossain leads with 72,897 votes', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: 'Sherpur-1 & Sherpur-2: Jamaat leads in partial results', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: 'Bandarban: BNP\'s Saching Prue Jerry leads with 32,817 votes in 46 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: 'Cox\'s Bazar-1: BNP\'s Salahuddin gets 28,069 votes in 20 centres', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
+      { title: 'Rangpur-1 & Rangpur-3: Jamaat leads in partial results', url: 'https://en.prothomalo.com/bangladesh/v6dasyfa1d', breaking: 1 },
     ];
     for (const h of headlines) {
       insertNews.run(h.title, h.url, 'The Daily Star', h.breaking);
