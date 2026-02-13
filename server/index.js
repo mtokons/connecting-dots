@@ -77,24 +77,22 @@ if (needsReseed) {
 // ─── গণনা শেষ — স্ক্র্যাপিং ও লাইভ রিফ্রেশ বন্ধ ─────
 // Counting is finished. No more scheduled scraping or live updates.
 // To re-enable, uncomment the cron schedule and initial scrape below.
-/*
-const scrapeInterval = process.env.SCRAPE_INTERVAL || 5;
-cron.schedule(`*/${scrapeInterval} * * * *`, async () => {
-  console.log('🔄 Running scheduled scrape...');
-  try {
-    await scrapeAllSources();
-    await runPrediction();
-    console.log('✅ Scrape & prediction complete');
-  } catch (err) {
-    console.error('❌ Scrape error:', err.message);
-  }
-});
-
-setTimeout(async () => {
-  await scrapeAllSources();
-  await runPrediction();
-}, 2000);
-*/
+// const scrapeInterval = process.env.SCRAPE_INTERVAL || 5;
+// cron.schedule(`*/${scrapeInterval} * * * *`, async () => {
+//   console.log('🔄 Running scheduled scrape...');
+//   try {
+//     await scrapeAllSources();
+//     await runPrediction();
+//     console.log('✅ Scrape & prediction complete');
+//   } catch (err) {
+//     console.error('❌ Scrape error:', err.message);
+//   }
+// });
+//
+// setTimeout(async () => {
+//   await scrapeAllSources();
+//   await runPrediction();
+// }, 2000);
 console.log('📋 চূড়ান্ত ফলাফল মোড — লাইভ স্ক্র্যাপিং বন্ধ');
 
 app.listen(PORT, () => {
