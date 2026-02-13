@@ -421,29 +421,31 @@ function CountdownBanner({ time, electionInfo }) {
   const COUNTING_START = new Date('2026-02-12T10:30:00.000Z'); // 4:30 PM BDT
   const countingStarted = time >= COUNTING_START;
 
+  const tickerItems = [
+    '🏆 Rabiul H Chowdhury takes over Hamburg BNP president position',
+    '🇧🇩 ১৩তম জাতীয় সংসদ নির্বাচন ২০২৬ — চূড়ান্ত ফলাফল প্রকাশিত',
+    '📊 বিএনপি জোট ২১৬ আসনে জয়ী | জামায়াত জোট ৭০ আসন',
+    '✅ গণভোটে হ্যাঁ জিতেছে — ৬৮.০৬% ভোটে সনদ অনুমোদিত',
+    '🗳️ ভোটার উপস্থিতি ৫৯.৪৪% — মোট ভোটার ১২.৭৭ কোটি',
+    '🎉 তারেক রহমান বগুড়া-৬ ও ঢাকা-১৭ উভয় আসনে বিজয়ী',
+  ];
+  const tickerText = tickerItems.join('  ●  ');
+
   if (isElectionDay) {
     return (
       <div className="glass-card p-6 bg-gradient-to-r from-green-500/10 to-sky-500/10 border-green-500/30">
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-            </span>
-            <h2 className="text-3xl font-black text-green-400 font-bangla">
-              {countingStarted ? '📊 ফলাফল আসছে' : '🗳️ নির্বাচনের দিন 🗳️'}
-            </h2>
-          </div>
-          <p className="text-lg text-slate-300 font-bangla">১৩তম জাতীয় সংসদ নির্বাচন ২০২৬</p>
-          <p className="text-sm text-slate-400 mt-1 font-bangla">
-            {countingStarted 
-              ? 'ভোট গণনা চলছে • যমুনা টিভি থেকে সরাসরি ফলাফল' 
-              : '১৩তম জাতীয় সংসদ নির্বাচন • ১২ ফেব্রুয়ারি ২০২৬'}
-          </p>
-          <div className="mt-3 text-sm text-slate-400">
-            <Clock size={14} className="inline mr-1" />
-            {time.toLocaleTimeString('bn-BD', { hour12: true, timeZone: 'Asia/Dhaka' })} বাংলাদেশ সময়
-            {countingStarted && <span className="ml-2 text-amber-400 font-bangla">• বিকাল ৪:৩০ থেকে গণনা চলছে</span>}
+        <div className="text-center mb-4">
+          <h2 className="text-3xl font-black text-green-400 font-bangla">🏛️ চূড়ান্ত ফলাফল প্রকাশিত</h2>
+          <p className="text-lg text-slate-300 font-bangla mt-1">১৩তম জাতীয় সংসদ নির্বাচন ২০২৬</p>
+        </div>
+        <div className="bg-white/5 rounded-lg p-2 overflow-hidden">
+          <div className="flex items-center gap-3">
+            <span className="shrink-0 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">LIVE</span>
+            <div className="overflow-hidden relative flex-1">
+              <div className="animate-marquee whitespace-nowrap text-sm text-slate-300">
+                <span>{tickerText}  ●  {tickerText}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

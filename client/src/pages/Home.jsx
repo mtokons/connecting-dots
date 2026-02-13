@@ -122,8 +122,8 @@ export default function Home() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Countdown Banner */}
-      <MiniCountdown time={time} />
+      {/* Scrolling News Ticker */}
+      <MiniCountdown />
 
       {/* Header with Live Status */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -532,65 +532,30 @@ function NewsTicker({ news, breaking }) {
   );
 }
 
-// ─── MINI COUNTDOWN ─────────────────────────────────────
-function MiniCountdown({ time }) {
-  const diff = ELECTION_DATE - time;
-  const COUNTING_START = new Date('2026-02-12T10:30:00.000Z'); // 4:30 PM BDT
-  const countingStarted = time >= COUNTING_START;
-  
-  if (diff <= 0) {
-    if (countingStarted) {
-      // After 4:30 PM BDT — counting has started
-      const countingTime = time - COUNTING_START;
-      const cHours = Math.floor(countingTime / 3600000);
-      const cMins = Math.floor((countingTime % 3600000) / 60000);
-      return (
-        <div className="bg-gradient-to-r from-red-500/10 via-amber-500/10 to-green-500/10 border border-amber-500/30 rounded-xl p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-              <span className="text-amber-400 font-bold text-sm">🗳️ ভোট গণনা চলছে</span>
-              <span className="text-xs text-slate-400 font-bangla">ফলাফল আসছে</span>
-            </div>
-            <div className="text-xs text-slate-500">
-              গণনা চলছে {cHours} ঘণ্টা {cMins} মিনিট | ফলাফল আসছে…
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-            </span>
-            <span className="text-green-400 font-bold text-sm">🗳️ ভোটদান চলছে — ১২ ফেব্রুয়ারি ২০২৬</span>
-            <span className="text-xs text-slate-400 font-bangla">ভোট চলছে</span>
-          </div>
-          <div className="text-xs text-slate-500">ভোট শেষ হবে বিকাল ৪:৩০ টায়</div>
-        </div>
-      </div>
-    );
-  }
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const minutes = Math.floor((diff % 3600000) / 60000);
-  const seconds = Math.floor((diff % 60000) / 1000);
-  
+// ─── SCROLLING NEWS TICKER BAR ──────────────────────────
+function MiniCountdown() {
+  const tickerItems = [
+    '🏆 Rabiul H Chowdhury takes over Hamburg BNP president position',
+    '🇧🇩 ১৩তম জাতীয় সংসদ নির্বাচন ২০২৬ — চূড়ান্ত ফলাফল প্রকাশিত',
+    '📊 বিএনপি জোট ২১৬ আসনে জয়ী | জামায়াত জোট ৭০ আসন',
+    '✅ গণভোটে হ্যাঁ জিতেছে — ৬৮.০৬% ভোটে সনদ অনুমোদিত',
+    '🗳️ ভোটার উপস্থিতি ৫৯.৪৪% — মোট ভোটার ১২.৭৭ কোটি',
+    '🎉 তারেক রহমান বগুড়া-৬ ও ঢাকা-১৭ উভয় আসনে বিজয়ী',
+    '📢 হাসনাত আবদুল্লাহ কুমিল্লা-৪ আসনে জয়ী — এনসিপি',
+  ];
+
+  const tickerText = tickerItems.join('  ●  ');
+
   return (
-    <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3 flex items-center justify-between">
-      <div className="flex items-center gap-2 text-sm">
-        <Calendar size={16} className="text-sky-400" />
-        <span className="text-slate-300 font-medium">⏱️ নির্বাচন বাকি</span>
-        <span className="font-black text-sky-400">{days} দিন {hours} ঘণ্টা {minutes} মিনিট {seconds} সেকেন্ড</span>
+    <div className="bg-gradient-to-r from-sky-500/10 via-violet-500/10 to-sky-500/10 border border-sky-500/20 rounded-xl p-2.5 overflow-hidden">
+      <div className="flex items-center gap-3">
+        <span className="shrink-0 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">LIVE</span>
+        <div className="overflow-hidden relative flex-1">
+          <div className="animate-marquee whitespace-nowrap text-sm text-slate-300">
+            <span>{tickerText}  ●  {tickerText}</span>
+          </div>
+        </div>
       </div>
-      <div className="text-xs text-slate-500">১২ ফেব্রুয়ারি ২০২৬ • সকাল ৮:০০ টা</div>
     </div>
   );
 }

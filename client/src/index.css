@@ -149,6 +149,19 @@
   100% { background-position: calc(200px + 100%) 0; }
 }
 
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 .animate-count-up {
   animation: countUp 0.5s ease-out forwards;
 }
