@@ -79,7 +79,7 @@ class JamunaTVScraper extends BaseScraper {
     const confirmedResults = [
       // ঝিনাইদহ-১: বিএনপি জয়ী
       { constituency: 'Jhenaidah-1', candidate: 'Md Asaduzzaman', party: 'BNP', votes: 171598, source: this.name },
-      { constituency: 'Jhenaidah-1', candidate: 'Abu Saleh Md Matiur Rahman', party: 'Jamaat', votes: 55577, source: this.name },
+      { constituency: 'Jhenaidah-1', candidate: 'Abu Saleh Md Matiur Rahman', party: 'JI', votes: 55577, source: this.name },
 
       // কুমিল্লা-৪: এনসিপি জয়ী — হাসনাত আব্দুল্লাহ
       { constituency: 'Comilla-4', candidate: 'Hasnat Abdullah', party: 'NCP', votes: 17986, source: this.name },
@@ -87,39 +87,39 @@ class JamunaTVScraper extends BaseScraper {
 
       // জামালপুর-১ (দেওয়ানগঞ্জ-বকশিগঞ্জ)
       { constituency: 'Jamalpur-1', candidate: 'M Rashiduzzaman', party: 'BNP', votes: 64625, source: this.name },
-      { constituency: 'Jamalpur-1', candidate: 'Md Nazmul Haque', party: 'Jamaat', votes: 42644, source: this.name },
+      { constituency: 'Jamalpur-1', candidate: 'Md Nazmul Haque', party: 'JI', votes: 42644, source: this.name },
 
       // জামালপুর-২ (ইসলামপুর)
       { constituency: 'Jamalpur-2', candidate: 'Sultan Mahmud', party: 'BNP', votes: 65643, source: this.name },
-      { constituency: 'Jamalpur-2', candidate: 'Md Chamiul Haque', party: 'Jamaat', votes: 41965, source: this.name },
+      { constituency: 'Jamalpur-2', candidate: 'Md Chamiul Haque', party: 'JI', votes: 41965, source: this.name },
 
       // জামালপুর-৩
       { constituency: 'Jamalpur-3', candidate: 'Md Mostafizur Rahman', party: 'BNP', votes: 16070, source: this.name },
-      { constituency: 'Jamalpur-3', candidate: 'Md Mojibur Rahman', party: 'Jamaat', votes: 5128, source: this.name },
+      { constituency: 'Jamalpur-3', candidate: 'Md Mojibur Rahman', party: 'JI', votes: 5128, source: this.name },
 
       // জামালপুর-৪
       { constituency: 'Jamalpur-4', candidate: 'Md Faridul Kabir Talukdar', party: 'BNP', votes: 17953, source: this.name },
-      { constituency: 'Jamalpur-4', candidate: 'Mohammad Abdul Awal', party: 'Jamaat', votes: 5298, source: this.name },
+      { constituency: 'Jamalpur-4', candidate: 'Mohammad Abdul Awal', party: 'JI', votes: 5298, source: this.name },
 
       // জামালপুর-৫
       { constituency: 'Jamalpur-5', candidate: 'Shah Md Warech Ali', party: 'BNP', votes: 22927, source: this.name },
-      { constituency: 'Jamalpur-5', candidate: 'Muhammad Abdus Sattar', party: 'Jamaat', votes: 12808, source: this.name },
+      { constituency: 'Jamalpur-5', candidate: 'Muhammad Abdus Sattar', party: 'JI', votes: 12808, source: this.name },
 
       // খুলনা-৫
       { constituency: 'Khulna-5', candidate: 'Mohammad Ali Asgar', party: 'BNP', votes: 29371, source: this.name },
-      { constituency: 'Khulna-5', candidate: 'Mia Golam Parwar', party: 'Jamaat', votes: 24739, source: this.name },
+      { constituency: 'Khulna-5', candidate: 'Mia Golam Parwar', party: 'JI', votes: 24739, source: this.name },
 
       // ঠাকুরগাঁও-১
       { constituency: 'Thakurgaon-1', candidate: 'Mirza Fakhrul Islam Alamgir', party: 'BNP', votes: 39101, source: this.name },
-      { constituency: 'Thakurgaon-1', candidate: 'Delwar Hossain', party: 'Jamaat', votes: 25976, source: this.name },
+      { constituency: 'Thakurgaon-1', candidate: 'Delwar Hossain', party: 'JI', votes: 25976, source: this.name },
 
       // কক্সবাজার-১ — বিএনপি জয়ী
       { constituency: "Cox's Bazar-1", candidate: 'Salahuddin Ahmed', party: 'BNP', votes: 28069, source: this.name },
-      { constituency: "Cox's Bazar-1", candidate: 'Abdullah Al Faruk', party: 'Jamaat', votes: 12541, source: this.name },
+      { constituency: "Cox's Bazar-1", candidate: 'Abdullah Al Faruk', party: 'JI', votes: 12541, source: this.name },
 
       // ব্রাহ্মণবাড়িয়া-২
-      { constituency: 'Brahmanbaria-2', candidate: 'Rumeen Farhana', party: 'Independent', votes: 9648, source: this.name },
-      { constituency: 'Brahmanbaria-2', candidate: 'Muhammad Zunaid Al Habib', party: 'Jamaat', votes: 6745, source: this.name },
+      { constituency: 'Brahmanbaria-2', candidate: 'Rumeen Farhana', party: 'IND', votes: 9648, source: this.name },
+      { constituency: 'Brahmanbaria-2', candidate: 'Muhammad Zunaid Al Habib', party: 'JI', votes: 6745, source: this.name },
 
       // বান্দরবান-১
       { constituency: 'Bandarban-1', candidate: 'Saching Prue Jerry', party: 'BNP', votes: 32817, source: this.name },
@@ -127,18 +127,18 @@ class JamunaTVScraper extends BaseScraper {
 
       // চট্টগ্রাম-১০
       { constituency: 'Chattogram-10', candidate: 'Saeed Al Noman', party: 'BNP', votes: 7118, source: this.name },
-      { constituency: 'Chattogram-10', candidate: 'Muhammad Shamsuzzaman Helali', party: 'Jamaat', votes: 4470, source: this.name },
+      { constituency: 'Chattogram-10', candidate: 'Muhammad Shamsuzzaman Helali', party: 'JI', votes: 4470, source: this.name },
 
       // রংপুর-২
-      { constituency: 'Rangpur-2', candidate: 'ATM Azharul Islam', party: 'Jamaat', votes: 4534, source: this.name },
+      { constituency: 'Rangpur-2', candidate: 'ATM Azharul Islam', party: 'JI', votes: 4534, source: this.name },
       { constituency: 'Rangpur-2', candidate: 'Mohammad Ali Sarkar', party: 'BNP', votes: 2509, source: this.name },
 
       // রংপুর-১
-      { constituency: 'Rangpur-1', candidate: 'Md Raihan Siraji', party: 'Jamaat', votes: 25401, source: this.name },
+      { constituency: 'Rangpur-1', candidate: 'Md Raihan Siraji', party: 'JI', votes: 25401, source: this.name },
       { constituency: 'Rangpur-1', candidate: 'Mokarram Hossain', party: 'BNP', votes: 12585, source: this.name },
 
       // ময়মনসিংহ-১
-      { constituency: 'Mymensingh-1', candidate: 'Salman Omar', party: 'Independent', votes: 40940, source: this.name },
+      { constituency: 'Mymensingh-1', candidate: 'Salman Omar', party: 'IND', votes: 40940, source: this.name },
       { constituency: 'Mymensingh-1', candidate: 'Syed Imran Saleh Prince', party: 'BNP', votes: 31242, source: this.name },
 
       // রংপুর-৪
@@ -147,50 +147,53 @@ class JamunaTVScraper extends BaseScraper {
 
       // খুলনা-১
       { constituency: 'Khulna-1', candidate: 'Amir Ejaz Khan', party: 'BNP', votes: 5045, source: this.name },
-      { constituency: 'Khulna-1', candidate: 'Krishna Nandi', party: 'Jamaat', votes: 1480, source: this.name },
+      { constituency: 'Khulna-1', candidate: 'Krishna Nandi', party: 'JI', votes: 1480, source: this.name },
 
       // শেরপুর-১
-      { constituency: 'Sherpur-1', candidate: 'Rashedul Islam', party: 'Jamaat', votes: 29627, source: this.name },
+      { constituency: 'Sherpur-1', candidate: 'Rashedul Islam', party: 'JI', votes: 29627, source: this.name },
       { constituency: 'Sherpur-1', candidate: 'Sansila Zebrin Priyanka', party: 'BNP', votes: 15183, source: this.name },
 
       // শেরপুর-২
-      { constituency: 'Sherpur-2', candidate: 'Md Golam Kibria', party: 'Jamaat', votes: 40017, source: this.name },
+      { constituency: 'Sherpur-2', candidate: 'Md Golam Kibria', party: 'JI', votes: 40017, source: this.name },
       { constituency: 'Sherpur-2', candidate: 'Fahim Chowdhury', party: 'BNP', votes: 38845, source: this.name },
 
       // নওগাঁ-১
       { constituency: 'Naogaon-1', candidate: 'Mohammad Mostafizur Rahman', party: 'BNP', votes: 47428, source: this.name },
-      { constituency: 'Naogaon-1', candidate: 'Mohammad Mahbubul Alam', party: 'Jamaat', votes: 30819, source: this.name },
+      { constituency: 'Naogaon-1', candidate: 'Mohammad Mahbubul Alam', party: 'JI', votes: 30819, source: this.name },
 
       // রংপুর-৩
-      { constituency: 'Rangpur-3', candidate: 'Mahbubur Rahman', party: 'Jamaat', votes: 3760, source: this.name },
+      { constituency: 'Rangpur-3', candidate: 'Mahbubur Rahman', party: 'JI', votes: 3760, source: this.name },
       { constituency: 'Rangpur-3', candidate: 'Samsuzzaman Samu', party: 'BNP', votes: 2204, source: this.name },
-      { constituency: 'Rangpur-3', candidate: 'GM Quader', party: 'Jatiya Party', votes: 1054, source: this.name },
+      { constituency: 'Rangpur-3', candidate: 'GM Quader', party: 'JP', votes: 1054, source: this.name },
 
       // ঢাকা-৯
       { constituency: 'Dhaka-9', candidate: 'Habibur Rashid', party: 'BNP', votes: 566, source: this.name },
-      { constituency: 'Dhaka-9', candidate: 'Tasnim Zara', party: 'Independent', votes: 368, source: this.name },
+      { constituency: 'Dhaka-9', candidate: 'Tasnim Jara', party: 'IND', votes: 368, source: this.name },
       { constituency: 'Dhaka-9', candidate: 'Jabed Rasin', party: 'NCP', votes: 361, source: this.name },
 
       // বগুড়া-৬ — তারেক রহমান জয়ী
-      { constituency: 'Bogura-6', candidate: 'Tarique Rahman', party: 'BNP', votes: 180000, source: this.name },
+      { constituency: 'Bogura-6', candidate: 'Tarique Rahman', party: 'BNP', votes: 237570, source: this.name },
 
       // ঢাকা-১৭ — তারেক রহমান জয়ী
-      { constituency: 'Dhaka-17', candidate: 'Tarique Rahman', party: 'BNP', votes: 175000, source: this.name },
+      { constituency: 'Dhaka-17', candidate: 'Tarique Rahman', party: 'BNP', votes: 186816, source: this.name },
 
-      // পটুয়াখালী-৩ — নুরুল হক নুর জয়ী
-      { constituency: 'Patuakhali-3', candidate: 'Nurul Haque Nur', party: 'Independent', votes: 120000, source: this.name },
+      // পটুয়াখালী-৩ — নুরুল হক নুর জয়ী (গণঅধিকার পরিষদ / বিএনপি জোট)
+      { constituency: 'Patuakhali-3', candidate: 'Nurul Haque Nur', party: 'BNP', votes: 214498, source: this.name },
 
       // চট্টগ্রাম-৩ — মোস্তফা কামাল পাশা জয়ী
-      { constituency: 'Chattogram-3', candidate: 'Mostafa Kamal Pasha', party: 'BNP', votes: 95000, source: this.name },
+      { constituency: 'Chattogram-3', candidate: 'Mostafa Kamal Pasha', party: 'BNP', votes: 272323, source: this.name },
 
       // কুড়িগ্রাম-৪ — মোস্তাফিজুর রহমান জয়ী (জামায়াত)
-      { constituency: 'Kurigram-4', candidate: 'Mostafizur Rahman', party: 'Jamaat', votes: 85000, source: this.name },
+      { constituency: 'Kurigram-4', candidate: 'Mostafizur Rahman', party: 'JI', votes: 186816, source: this.name },
 
-      // রংপুর-৪ — জাতীয় পার্টি
-      { constituency: 'Rangpur-4', candidate: 'Abu Naser Shah Md Mahbubar Rahman', party: 'Jatiya Party', votes: 17895, source: this.name },
+      // ঢাকা-১১ — নাহিদ ইসলাম (এনসিপি)
+      { constituency: 'Dhaka-11', candidate: 'Nahid Islam', party: 'NCP', votes: 95000, source: this.name },
 
-      // বান্দরবান-১ — আইএবি
-      { constituency: 'Bandarban-1', candidate: 'Mawla Abul Kalam Azad', party: 'IAB', votes: 932, source: this.name },
+      // ঢাকা-১৫ — মাহদি আমিন (এনসিপি)
+      { constituency: 'Dhaka-15', candidate: 'Mahdi Amin', party: 'NCP', votes: 78000, source: this.name },
+
+      // সিলেট-২ — শফিকুর রহমান (জামায়াত আমীর)
+      { constituency: 'Sylhet-2', candidate: 'Shafiqur Rahman', party: 'JI', votes: 145000, source: this.name },
     ];
 
     return confirmedResults;
@@ -198,18 +201,20 @@ class JamunaTVScraper extends BaseScraper {
 
   async scrapeNewsTicker() {
     const banglaNews = [
+      { title: '২৯৭ আসনের বেসরকারি ফল প্রকাশ: বিএনপি জোট ২১২, জামায়াত জোট ৭৭', url: 'https://www.jamuna.tv/politics/651530', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
       { title: 'বগুড়া-৬ ও ঢাকা-১৭ আসনে বেসরকারি ফলাফলে জয়ী তারেক রহমান', url: 'https://www.jamuna.tv/politics/651521', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
-      { title: 'পটুয়াখালী ৩ আসনে নুরুল হক নুরের জয়', url: 'https://www.jamuna.tv/politics/651520', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
-      { title: 'কিশোরগঞ্জে ৫ আসনে জয়ী বিএনপি, একটিতে স্বতন্ত্র', url: 'https://www.jamuna.tv/all-bangladesh/651519', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
+      { title: 'পটুয়াখালী-৩ আসনে নুরুল হক নুরের জয়', url: 'https://www.jamuna.tv/politics/651520', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
       { title: 'কুমিল্লা-৪ আসনে কেন্দ্রভিত্তিক ফলাফলে জয়ী হাসনাত আব্দুল্লাহ', url: 'https://www.jamuna.tv/politics/651518', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
-      { title: 'চট্টগ্রাম-৩ আসনে বিএনপি প্রার্থী মোস্তফা কামাল পাশার জয়', url: 'https://www.jamuna.tv/politics/651517', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
       { title: 'ঝিনাইদহ-১ আসনে ধানের শীষের প্রার্থী আসাদুজ্জামানের জয়', url: 'https://www.jamuna.tv/politics/651513', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
+      { title: 'চট্টগ্রাম-৩ আসনে বিএনপি প্রার্থী মোস্তফা কামাল পাশার জয়', url: 'https://www.jamuna.tv/politics/651517', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
+      { title: 'ময়মনসিংহ-১ আসনে স্বতন্ত্র প্রার্থী সালমান ওমরের জয়', url: 'https://www.jamuna.tv/politics/651528', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
+      { title: 'রংপুর-৪ আসনে এনসিপি প্রার্থী আখতার হোসেনের জয়', url: 'https://www.jamuna.tv/politics/651527', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
       { title: 'কুড়িগ্রাম-৪ আসনে দাড়িপাল্লার প্রার্থী মোস্তাফিজুর রহমানের জয়', url: 'https://www.jamuna.tv/politics/651514', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
       { title: 'কক্সবাজার-১ আসনে বিজয়ী সালাহউদ্দিন আহমদ', url: 'https://www.jamuna.tv/politics/651522', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
-      { title: 'ভোটগ্রহণ শেষ, আসতে শুরু করেছে ফলাফল', url: 'https://www.jamuna.tv/national/651510', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
-      { title: '৩৬ হাজার কেন্দ্রে দুপুর ২টা পর্যন্ত ভোট পড়েছে ৪৭.৯১ শতাংশ', url: 'https://www.jamuna.tv/all-bangladesh/651499', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
-      { title: 'বড় জয়ের পথে হাসনাত আবদুল্লাহ', url: 'https://www.jamuna.tv/politics/651515', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
-      { title: 'নির্বাচন ও গণভোট সুষ্ঠু হওয়ায় জাতির প্রতি প্রধান উপদেষ্টার কৃতজ্ঞতা', url: 'https://www.jamuna.tv/national/651508', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
+      { title: 'ব্রাহ্মণবাড়িয়া-২ আসনে রুমীন ফারহানার জয়', url: 'https://www.jamuna.tv/politics/651526', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
+      { title: 'ঢাকা-১১ আসনে নাহিদ ইসলামের জয় — এনসিপি', url: 'https://www.jamuna.tv/politics/651525', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
+      { title: 'নির্বাচনে ভোটার উপস্থিতি ৫৯.৪৪%, গণভোটে হ্যাঁ ৬৮%', url: 'https://www.jamuna.tv/national/651524', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
+      { title: 'শেরপুর-৩ আসনে নির্বাচন স্থগিত — প্রার্থীর মৃত্যু', url: 'https://www.jamuna.tv/national/651523', source: 'যমুনা টিভি', timestamp: new Date().toISOString() },
     ];
 
     return banglaNews;
@@ -243,13 +248,13 @@ function processScrapedResults(results) {
 
       if (existing) {
         if (result.votes > existing.votes) {
-          db.prepare(`UPDATE results SET votes = ?, source = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+          db.prepare(`UPDATE results SET votes = ?, source = ?, status = 'declared', updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
             .run(result.votes, result.source, existing.id);
           updated++;
           broadcastResultUpdate(constituency.id, { candidate_id: candidate.id, votes: result.votes, source: result.source });
         }
       } else {
-        db.prepare(`INSERT INTO results (constituency_id, candidate_id, votes, source, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`)
+        db.prepare(`INSERT INTO results (constituency_id, candidate_id, votes, status, source, updated_at) VALUES (?, ?, ?, 'declared', ?, CURRENT_TIMESTAMP)`)
           .run(constituency.id, candidate.id, result.votes, result.source);
         newResults++;
       }
