@@ -41,28 +41,28 @@ export function useApi(endpoint, options = {}) {
 
 // ─── Dashboard data hook ────────────────────────────────
 export function useDashboard() {
-  return useApi('/dashboard', { autoRefresh: 10000 });
+  return useApi('/dashboard', { autoRefresh: 0 });
 }
 
 // ─── Party tree data hook ───────────────────────────────
 export function usePartyTree() {
-  return useApi('/parties/tree', { autoRefresh: 15000 });
+  return useApi('/parties/tree', { autoRefresh: 0 });
 }
 
 // ─── Constituencies hook ────────────────────────────────
 export function useConstituencies(params = {}) {
   const query = new URLSearchParams(params).toString();
-  return useApi(`/constituencies?${query}`, { autoRefresh: 20000 });
+  return useApi(`/constituencies?${query}`, { autoRefresh: 0 });
 }
 
 // ─── Constituency detail hook ───────────────────────────
 export function useConstituency(id) {
-  return useApi(`/constituency/${id}`, { enabled: !!id, autoRefresh: 10000 });
+  return useApi(`/constituency/${id}`, { enabled: !!id, autoRefresh: 0 });
 }
 
 // ─── Predictions hook ───────────────────────────────────
 export function usePredictions() {
-  const { data: raw, loading, error, refetch } = useApi('/predictions', { autoRefresh: 30000, fullResponse: true });
+  const { data: raw, loading, error, refetch } = useApi('/predictions', { autoRefresh: 0, fullResponse: true });
   
   return {
     data: raw?.data || [],
@@ -77,12 +77,12 @@ export function usePredictions() {
 
 // ─── Divisions hook ─────────────────────────────────────
 export function useDivisions() {
-  return useApi('/divisions', { autoRefresh: 30000 });
+  return useApi('/divisions', { autoRefresh: 0 });
 }
 
 // ─── News ticker hook ───────────────────────────────────
 export function useNewsTicker() {
-  return useApi('/news', { autoRefresh: 60000 });
+  return useApi('/news', { autoRefresh: 0 });
 }
 
 // ─── SSE (Server-Sent Events) hook ──────────────────────

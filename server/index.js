@@ -74,7 +74,10 @@ if (needsReseed) {
   console.log('✅ ডাটাবেস সফলভাবে পুনরায় সিড করা হয়েছে');
 }
 
-// Schedule scraping every N minutes
+// ─── গণনা শেষ — স্ক্র্যাপিং ও লাইভ রিফ্রেশ বন্ধ ─────
+// Counting is finished. No more scheduled scraping or live updates.
+// To re-enable, uncomment the cron schedule and initial scrape below.
+/*
 const scrapeInterval = process.env.SCRAPE_INTERVAL || 5;
 cron.schedule(`*/${scrapeInterval} * * * *`, async () => {
   console.log('🔄 Running scheduled scrape...');
@@ -87,16 +90,12 @@ cron.schedule(`*/${scrapeInterval} * * * *`, async () => {
   }
 });
 
-// Initial scrape on startup
 setTimeout(async () => {
-  console.log('🚀 Running initial data load...');
-  try {
-    await scrapeAllSources();
-    await runPrediction();
-  } catch (err) {
-    console.error('❌ Initial scrape error:', err.message);
-  }
+  await scrapeAllSources();
+  await runPrediction();
 }, 2000);
+*/
+console.log('📋 চূড়ান্ত ফলাফল মোড — লাইভ স্ক্র্যাপিং বন্ধ');
 
 app.listen(PORT, () => {
   console.log(`
