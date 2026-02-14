@@ -8,10 +8,12 @@ const cron = require('node-cron');
 
 const db = require('./db/database');
 const apiRoutes = require('./routes/api');
+const mediaRoutes = require('./routes/media');
 const sseRoutes = require('./routes/sse');
 const { scrapeAllSources } = require('./scraper/scrapeManager');
 const { runPrediction } = require('./ai/predictionEngine');
 const { seedData } = require('./scripts/seedData');
+const { seedMediaData } = require('./scripts/seedMedia');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +26,7 @@ app.use(express.json());
 
 // API Routes
 app.use('/api', apiRoutes);
+app.use('/api', mediaRoutes);
 app.use('/sse', sseRoutes);
 
 // Serve static files in production
@@ -72,6 +75,18 @@ if (needsReseed) {
   db.initialize();
   seedData();
   console.log('✅ ডাটাবেস সফলভাবে পুনরায় সিড করা হয়েছে');
+}
+
+// Seed media data if empty
+try {
+  const mediaCheck = database.prepare('SELECT COUNT(*) as count FROM posts').get();
+  if (mediaCheck.count === 0) {
+    console.log('📦 মিডিয়া কন্টেন্ট সিড করা হচ্ছে...');
+    seedMediaData();
+    console.log('✅ মিডিয়া কন্টেন্ট সফলভাবে সিড করা হয়েছে');
+  }
+} catch (e) {
+  console.log('⚠️ মিডিয়া সিড স্কিপ:', e.message);
 }
 
 // ─── গণনা শেষ — স্ক্র্যাপিং ও লাইভ রিফ্রেশ বন্ধ ─────

@@ -165,3 +165,81 @@ export function useSearch() {
 
   return { results, loading, search };
 }
+
+// ─── Posts hook ──────────────────────────────────────────
+export function usePosts(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return useApi(`/posts?${query}`);
+}
+
+// ─── Single post hook ───────────────────────────────────
+export function usePost(slug) {
+  return useApi(`/posts/${slug}`, { enabled: !!slug });
+}
+
+// ─── Podcasts hook ──────────────────────────────────────
+export function usePodcasts(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return useApi(`/podcasts?${query}`);
+}
+
+// ─── Single podcast hook ────────────────────────────────
+export function usePodcast(slug) {
+  return useApi(`/podcasts/${slug}`, { enabled: !!slug });
+}
+
+// ─── Streams hook ───────────────────────────────────────
+export function useStreams(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return useApi(`/streams?${query}`);
+}
+
+// ─── Comments hook ──────────────────────────────────────
+export function useComments(contentType, contentId) {
+  return useApi(`/comments/${contentType}/${contentId}`, {
+    enabled: !!contentType && !!contentId
+  });
+}
+
+// ─── Post comment hook ──────────────────────────────────
+export function usePostComment() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const postComment = useCallback(async (data) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      return json.data;
+    } catch (err) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const likeComment = useCallback(async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/comments/${id}/like`, { method: 'POST' });
+      const json = await res.json();
+      return json.data;
+    } catch (err) {
+      return null;
+    }
+  }, []);
+
+  return { postComment, likeComment, loading, error };
+}
+
+// ─── Categories hook ────────────────────────────────────
+export function useCategories() {
+  return useApi('/categories');
+}

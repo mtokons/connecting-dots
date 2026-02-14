@@ -2,17 +2,16 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSSE } from '../hooks/useApi';
 import { 
-  Home, LayoutDashboard, TreePine, MapPin, Brain, 
-  Radio, Menu, X, Search, Wifi, WifiOff 
+  Home, Newspaper, Mic, Radio, Vote,
+  Menu, X, Wifi, WifiOff, MessageSquare
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/', label: 'হোম', labelBn: 'হোম', icon: Home },
-  { path: '/dashboard', label: 'ড্যাশবোর্ড', labelBn: 'ড্যাশবোর্ড', icon: LayoutDashboard },
-  { path: '/tree', label: 'পার্টি ট্রি', labelBn: 'পার্টি ট্রি', icon: TreePine },
-  { path: '/constituencies', label: '৩০০ আসন', labelBn: '৩০০ আসন', icon: MapPin },
-  { path: '/predictions', label: 'এআই পূর্বাভাস', labelBn: 'এআই পূর্বাভাস', icon: Brain },
-  { path: '/live', label: 'লাইভ স্টুডিও', labelBn: 'লাইভ স্টুডিও', icon: Radio },
+  { path: '/', label: 'হোম', icon: Home },
+  { path: '/news', label: 'সংবাদ', icon: Newspaper },
+  { path: '/podcasts', label: 'পডকাস্ট', icon: Mic },
+  { path: '/live', label: 'লাইভ', icon: Radio },
+  { path: '/election', label: 'নির্বাচন ২০২৬', icon: Vote },
 ];
 
 export default function Layout({ children }) {
@@ -59,7 +58,7 @@ export default function Layout({ children }) {
                 Connecting Dots
               </h1>
               <p className="text-[10px] text-slate-400 -mt-0.5 font-bangla">
-                ১৩তম জাতীয় সংসদ নির্বাচন ২০২৬ • লাইভ
+                সংবাদ • পডকাস্ট • লাইভ স্ট্রিমিং
               </p>
             </div>
           </Link>
@@ -68,13 +67,14 @@ export default function Layout({ children }) {
           <nav className="hidden lg:flex items-center gap-1" aria-label="প্রধান নেভিগেশন">
             {navItems.map(item => {
               const Icon = item.icon;
-              const active = location.pathname === item.path;
+              const active = location.pathname === item.path || 
+                (item.path !== '/' && location.pathname.startsWith(item.path));
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  aria-label={item.labelBn}
-                  title={item.labelBn}
+                  aria-label={item.label}
+                  title={item.label}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                     active
                       ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
@@ -121,13 +121,14 @@ export default function Layout({ children }) {
             <div className="grid grid-cols-2 gap-2">
               {navItems.map(item => {
                 const Icon = item.icon;
-                const active = location.pathname === item.path;
+                const active = location.pathname === item.path ||
+                  (item.path !== '/' && location.pathname.startsWith(item.path));
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    aria-label={item.labelBn}
+                    aria-label={item.label}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       active
                         ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
@@ -135,10 +136,7 @@ export default function Layout({ children }) {
                     }`}
                   >
                     <Icon size={16} />
-                    <div>
-                      <div>{item.label}</div>
-                      <div className="text-[10px] font-bangla opacity-60">{item.labelBn}</div>
-                    </div>
+                    <span>{item.label}</span>
                   </Link>
                 );
               })}
@@ -157,10 +155,10 @@ export default function Layout({ children }) {
         <div className="max-w-[1600px] mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">
             <p className="text-sm text-slate-500">
-              <span className="gradient-text font-bold">Connecting Dots</span> — এআই-চালিত নির্বাচন ড্যাশবোর্ড
+              <span className="gradient-text font-bold">Connecting Dots</span> — সংবাদ, পডকাস্ট ও লাইভ স্ট্রিমিং পোর্টাল
             </p>
             <p className="text-xs text-slate-600 mt-1">
-              তথ্যসূত্র: যমুনা টিভি • এটি কোনো সরকারি নির্বাচনী কর্তৃপক্ষ নয়
+              বাংলাদেশকেন্দ্রিক মিডিয়া প্ল্যাটফর্ম • এআই-চালিত বিশ্লেষণ
             </p>
           </div>
           <div className="flex items-center gap-4 text-xs text-slate-600">
