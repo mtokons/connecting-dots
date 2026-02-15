@@ -1,7 +1,7 @@
 {
   "name": "connecting-dots-bd-election",
   "version": "1.0.0",
-  "description": "Connecting Dots - AI-Powered Bangladesh Election Dashboard with D3 Tree Visualization",
+  "description": "Connecting Dots — বাংলাদেশি সংবাদ, পডকাস্ট ও লাইভ স্ট্রিমিং পোর্টাল। জার্মানি থেকে পরিচালিত।",
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
@@ -12,7 +12,7 @@
     "install-all": "npm install && cd client && npm install && cd ../server && npm install",
     "setup": "node server/scripts/seedData.js"
   },
-  "keywords": ["bangladesh", "election", "dashboard", "d3", "ai", "prediction"],
+  "keywords": ["bangladesh", "news", "podcast", "streaming", "election", "ai", "media-portal", "germany"],
   "author": "Connecting Dots",
   "license": "MIT",
   "devDependencies": {

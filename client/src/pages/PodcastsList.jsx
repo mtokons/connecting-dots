@@ -28,7 +28,7 @@ export default function PodcastsList() {
           <div>
             <h1 className="text-2xl font-bold text-white font-bangla">Connecting Dots পডকাস্ট</h1>
             <p className="text-sm text-slate-400 mt-1 font-bangla">
-              বাংলাদেশের রাজনীতি, অর্থনীতি ও প্রযুক্তি নিয়ে গভীর আলোচনা ও সাক্ষাৎকার
+              জার্মানি থেকে পরিচালিত — বাংলাদেশের রাজনীতি, অর্থনীতি ও প্রযুক্তি নিয়ে গভীর আলোচনা ও সাক্ষাৎকার
             </p>
             <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
               <span className="flex items-center gap-1"><Headphones size={12} /> {podList.length} পর্ব</span>

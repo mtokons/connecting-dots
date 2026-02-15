@@ -39,7 +39,7 @@ export default function LiveStreaming() {
             লাইভ স্ট্রিমিং
           </h1>
           <p className="text-sm text-slate-400 mt-1 font-bangla">
-            সরাসরি সম্প্রচার, সাক্ষাৎকার ও বিশেষ আলোচনা
+            🇩🇪 জার্মানি থেকে সরাসরি সম্প্রচার, সাক্ষাৎকার ও বিশেষ আলোচনা
           </p>
         </div>
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${

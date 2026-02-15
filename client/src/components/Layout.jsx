@@ -58,7 +58,7 @@ export default function Layout({ children }) {
                 Connecting Dots
               </h1>
               <p className="text-[10px] text-slate-400 -mt-0.5 font-bangla">
-                সংবাদ • পডকাস্ট • লাইভ স্ট্রিমিং
+                🇧🇩 বাংলাদেশি সংবাদ • পডকাস্ট • লাইভ স্ট্রিমিং | 🇩🇪 জার্মানি থেকে পরিচালিত
               </p>
             </div>
           </Link>
@@ -155,16 +155,16 @@ export default function Layout({ children }) {
         <div className="max-w-[1600px] mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">
             <p className="text-sm text-slate-500">
-              <span className="gradient-text font-bold">Connecting Dots</span> — সংবাদ, পডকাস্ট ও লাইভ স্ট্রিমিং পোর্টাল
+              <span className="gradient-text font-bold">Connecting Dots</span> — বাংলাদেশি সংবাদ, পডকাস্ট ও লাইভ স্ট্রিমিং পোর্টাল
             </p>
             <p className="text-xs text-slate-600 mt-1">
-              বাংলাদেশকেন্দ্রিক মিডিয়া প্ল্যাটফর্ম • এআই-চালিত বিশ্লেষণ
+              🇩🇪 জার্মানি থেকে পরিচালিত • 🇧🇩 বাংলাদেশকেন্দ্রিক মিডিয়া ও এআই-চালিত বিশ্লেষণ
             </p>
           </div>
           <div className="flex items-center gap-4 text-xs text-slate-600">
             <span>🇧🇩 বাংলাদেশের জন্য তৈরি</span>
             <span>•</span>
-            <span>ওপেন সোর্স</span>
+            <span>🇩🇪 জার্মানি থেকে পরিচালিত</span>
             <span>•</span>
             <span>❤️ দিয়ে তৈরি</span>
           </div>

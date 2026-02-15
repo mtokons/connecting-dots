@@ -54,6 +54,34 @@ export default function PortalHome() {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* ─── BRAND HERO ──────────────────────────────── */}
+      <section className="glass-card p-6 md:p-8 bg-gradient-to-r from-sky-500/10 via-violet-500/5 to-emerald-500/10 border-sky-500/20">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center shrink-0">
+            <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <circle cx="8" cy="8" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="16" r="2"/>
+              <line x1="8" y1="8" x2="16" y2="6" strokeOpacity="0.5"/>
+              <line x1="8" y1="8" x2="12" y2="16" strokeOpacity="0.5"/>
+              <line x1="16" y1="6" x2="12" y2="16" strokeOpacity="0.5"/>
+            </svg>
+          </div>
+          <div className="text-center md:text-left">
+            <h1 className="text-2xl md:text-3xl font-bold text-white">
+              Connecting Dots
+            </h1>
+            <p className="text-sm text-slate-300 mt-1 font-bangla">
+              🇧🇩 বাংলাদেশি সংবাদ, পডকাস্ট ও লাইভ স্ট্রিমিং পোর্টাল — 🇩🇪 জার্মানি থেকে পরিচালিত
+            </p>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-3 text-xs text-slate-500">
+              <span className="bg-white/5 px-2.5 py-1 rounded-full border border-white/10">📰 সংবাদ ও বিশ্লেষণ</span>
+              <span className="bg-white/5 px-2.5 py-1 rounded-full border border-white/10">🎙️ পডকাস্ট ও সাক্ষাৎকার</span>
+              <span className="bg-white/5 px-2.5 py-1 rounded-full border border-white/10">📺 লাইভ স্ট্রিমিং</span>
+              <span className="bg-white/5 px-2.5 py-1 rounded-full border border-white/10">🤖 এআই-চালিত বিশ্লেষণ</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── NEWS TICKER ─────────────────────────────── */}
       {news.length > 0 && (
         <div className="glass-card overflow-hidden">
