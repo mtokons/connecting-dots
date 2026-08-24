@@ -1,0 +1,282 @@
+import express from 'express';
+import cors from 'cors';
+import 'dotenv/config';
+import http from 'http';
+import { Server } from 'socket.io';
+import streamRouter, { getFfmpegProcess } from './routes/stream';
+import recordingsRouter from './routes/recordings';
+import livekitRouter from './routes/livekit';
+import aiRouter from './routes/ai';
+import episodesRouter from './routes/episodes';
+import chatRouter from './routes/chat';
+import storageRouter from './routes/storage';
+import transcribeRouter from './routes/transcribe';
+import socialRouter from './routes/social';
+import youtubeRouter from './routes/youtube';
+import authRouter from './routes/auth';
+import { db } from './services/db';
+import { v4 as uuidv4 } from 'uuid';
+import * as admin from 'firebase-admin';
+import fs from 'fs';
+
+/**
+ * Initialize Firebase Admin only when credentials are actually present.
+ * - On Oracle Cloud / Cloud Run: provide either GOOGLE_APPLICATION_CREDENTIALS
+ *   (path to JSON) or FIREBASE_SERVICE_ACCOUNT_JSON (base64-encoded JSON).
+ * - Locally with no credentials: skip init so the JSON fallback in db.ts
+ *   keeps working.
+ */
+const initFirebase = () => {
+  if (admin.apps.length) return;
+
+  // Option 1: explicit JSON or base64 JSON in env (great for Docker/Cloud Run)
+  const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (b64) {
+    try {
+      // Try parsing directly first (raw JSON)
+      let json;
+      try {
+        json = JSON.parse(b64);
+      } catch {
+        // Fallback to base64
+        json = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
+      }
+      admin.initializeApp({ credential: admin.credential.cert(json) });
+      console.log('🔥 Firebase Admin initialized (env service account)');
+      return;
+    } catch (err) {
+      console.warn('⚠️  FIREBASE_SERVICE_ACCOUNT failed to parse:', err);
+    }
+  }
+
+  // Option 2: GOOGLE_APPLICATION_CREDENTIALS pointing to a JSON file
+  const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (credPath && fs.existsSync(credPath)) {
+    try {
+      admin.initializeApp(); // SDK reads ADC from the env path automatically
+      console.log('🔥 Firebase Admin initialized (ADC file)');
+      return;
+    } catch (err) {
+      console.warn('⚠️  Firebase ADC init failed:', err);
+    }
+  }
+
+  // Otherwise, leave Firebase off — db.ts will use the local JSON fallback.
+  console.log('💾 Firebase not configured — using local db.json fallback');
+};
+
+initFirebase();
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // Allow non-browser tools (curl) and any origin in the allowlist.
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error(`CORS blocked: ${origin}`));
+    },
+  })
+);
+app.use((req, _res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+app.use(express.json({ limit: '2mb' }));
+
+// Container/orchestrator health probes (Docker, Oracle Load Balancer, Cloud Run)
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime(), ts: Date.now() });
+});
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+  },
+  maxHttpBufferSize: 5 * 1024 * 1024, // allow chunky stream relays
+});
+
+// Mount routes
+app.use('/api/stream', streamRouter);
+app.use('/api/recordings', recordingsRouter);
+app.use('/api/livekit', livekitRouter);
+app.use('/api/ai', aiRouter);
+app.use('/api/episodes', episodesRouter);
+app.use('/api/chat', chatRouter);
+app.use('/api/storage', storageRouter);
+app.use('/api/transcribe', transcribeRouter);
+app.use('/api/social', socialRouter);
+app.use('/api/youtube', youtubeRouter);
+app.use('/api/auth', authRouter);
+
+// Capability discovery — frontend uses this to hide UI for un-configured features.
+app.get('/api/capabilities', (_req, res) => {
+  res.json({
+    cloudDb: db.isCloud(),
+    livekit: Boolean(process.env.LIVEKIT_API_KEY && process.env.LIVEKIT_API_SECRET),
+    anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
+    cloudStorage: Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_API_SECRET
+    ),
+    transcription: Boolean(process.env.HUGGINGFACE_API_TOKEN),
+    youtube: Boolean(
+      process.env.GOOGLE_CLIENT_ID &&
+        process.env.GOOGLE_CLIENT_SECRET &&
+        process.env.GOOGLE_REDIRECT_URI
+    ),
+    social: {
+      discord: Boolean(process.env.DISCORD_WEBHOOK_URL),
+      slack: Boolean(process.env.SLACK_WEBHOOK_URL),
+      telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID),
+      webhook: Boolean(process.env.GENERIC_WEBHOOK_URL),
+    },
+    version: process.env.APP_VERSION || '1.1.0',
+  });
+});
+
+// Socket.io events
+io.on('connection', (socket) => {
+  console.log('🔌 Client connected:', socket.id);
+
+  socket.on('room:join', async (roomId: string) => {
+    if (typeof roomId !== 'string' || !roomId.trim()) return;
+    const cleanRoom = roomId.trim();
+    socket.join(cleanRoom);
+    socket.join(`audience:${cleanRoom}`);
+    socket.emit('room:joined', cleanRoom);
+
+    // Send recent chat history to the joining client.
+    try {
+      const history = await db.listChat(cleanRoom, 100);
+      socket.emit('chat:history', history);
+    } catch {
+      /* non-fatal */
+    }
+  });
+
+  socket.on(
+    'chat:message',
+    async (payload: {
+      roomId?: string;
+      author?: string;
+      message?: string;
+      platform?: string;
+      channel?: 'audience' | 'backstage';
+    }) => {
+      const roomId = typeof payload?.roomId === 'string' ? payload.roomId.trim() : '';
+      const message = typeof payload?.message === 'string' ? payload.message.trim() : '';
+      const author = typeof payload?.author === 'string' ? payload.author.trim() : 'Guest';
+      const platform = typeof payload?.platform === 'string' ? payload.platform.trim() : 'Backstage';
+      const channel = payload?.channel === 'audience' ? 'audience' : 'backstage';
+
+      if (!roomId || !message) return;
+
+      const chatEvent = {
+        id: `${Date.now()}-${uuidv4().slice(0, 8)}`,
+        roomId,
+        ts: Date.now(),
+        author: (author || 'Guest').slice(0, 60),
+        message: message.slice(0, 1000),
+        platform: (platform || 'Backstage').slice(0, 32),
+        channel,
+        pinned: false,
+        deleted: false,
+      };
+
+      // Persist (best-effort) before broadcasting so reloads see history.
+      db.appendChat(chatEvent).catch(() => {});
+
+      io.to(roomId).emit('chat:message', chatEvent);
+    }
+  );
+
+  // Host moderation actions
+  socket.on('chat:moderate', async (p: { roomId: string; messageId: string; action: 'delete' | 'pin' }) => {
+    if (!p?.roomId || !p?.messageId) return;
+    if (p.action === 'delete') {
+      await db.deleteChat(p.messageId).catch(() => {});
+    }
+    io.to(p.roomId).emit('chat:moderation', p);
+  });
+
+  // Live captions broadcast (Web Speech API → all room members)
+  socket.on(
+    'captions:line',
+    (p: { roomId: string; speaker: string; text: string; final?: boolean }) => {
+      if (!p?.roomId || !p?.text) return;
+      io.to(p.roomId).emit('captions:line', { ...p, ts: Date.now() });
+    }
+  );
+
+  socket.on('stream:chunk', (chunk: Buffer | ArrayBuffer) => {
+    const ffmpeg = getFfmpegProcess();
+    if (ffmpeg && ffmpeg.stdin && !ffmpeg.stdin.destroyed) {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      try {
+        ffmpeg.stdin.write(buf);
+      } catch (err: any) {
+        if (err?.code !== 'EPIPE') {
+          console.warn('stream:chunk write failed:', err?.message || err);
+        }
+      }
+    }
+    // Note: do NOT broadcast raw video chunks to other clients
+  });
+
+  socket.on('stream:stop', () => {
+    console.log('⏹️  Stream stop signal received');
+  });
+
+  socket.on('studio:control', (payload: { roomId: string; command: string; value: any }) => {
+    const { roomId, command, value } = payload;
+    if (!roomId) return;
+    io.to(roomId).emit('studio:command', { command, value });
+    console.log(`🎮 Admin Command in ${roomId}: ${command} ->`, value);
+  });
+
+  // Reactions — broadcast emoji to everyone in the room
+  socket.on('reaction', (payload: { roomId: string; emoji: string }) => {
+    const { roomId, emoji } = payload;
+    if (!roomId || !emoji) return;
+    socket.to(roomId).emit('reaction', { emoji });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔌 Client disconnected:', socket.id);
+  });
+});
+
+server.listen(PORT, async () => {
+  console.log('');
+  console.log('🎙️  Connecting Dot Studio Server — powered by SCCG');
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`📡 API: http://localhost:${PORT}/api`);
+  console.log('');
+
+  // Attempt ngrok tunnel
+  try {
+    const ngrok = await import('ngrok');
+    const ngrokUrl = await (ngrok as any).connect({
+      addr: PORT,
+      authtoken: process.env.NGROK_AUTH_TOKEN,
+    });
+    console.log(`🌐 Public URL: ${ngrokUrl}`);
+    console.log('   Share this URL with your speakers to join');
+  } catch {
+    console.log('⚠️  ngrok not available — running in local mode only');
+    console.log('   Install ngrok and set NGROK_AUTH_TOKEN for public URLs');
+  }
+});
+
+export { app, io };

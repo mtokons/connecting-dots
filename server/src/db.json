@@ -1,0 +1,107 @@
+{
+  "episodes": [
+    {
+      "id": "ep-001",
+      "title": "The Future of AI in Broadcasting",
+      "host": "Jane Doe",
+      "guest": "Dr. Alan Turing",
+      "description": "We discuss how artificial intelligence is changing the landscape of live streaming and podcasting.",
+      "imageUrl": "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=1200&auto=format&fit=crop",
+      "status": "recorded",
+      "date": "2026-04-27",
+      "time": "20:00 CET",
+      "tags": [
+        "AI",
+        "Tech",
+        "Live"
+      ],
+      "roomId": "ep-ai-broadcast"
+    },
+    {
+      "id": "ep-002",
+      "title": "Building Engaging Communities",
+      "host": "John Smith",
+      "description": "Strategies for growing and maintaining a highly engaged audience on your designated social platforms.",
+      "imageUrl": "https://images.unsplash.com/photo-1511632765486-a01980e01a18?q=80&w=1200&auto=format&fit=crop",
+      "status": "upcoming",
+      "date": "2026-04-30",
+      "time": "18:00 CET",
+      "tags": [
+        "Community",
+        "Marketing"
+      ],
+      "roomId": "ep-communities"
+    },
+    {
+      "id": "ep-003",
+      "title": "Mastering Remote Interviews",
+      "host": "Jane Doe",
+      "guest": "Sarah Jenkins",
+      "description": "Tips and tricks for ensuring high-quality audio and video when interviewing guests remotely.",
+      "imageUrl": "https://images.unsplash.com/photo-1593697972673-c116c9058b7d?q=80&w=1200&auto=format&fit=crop",
+      "status": "upcoming",
+      "date": "2026-05-05",
+      "time": "19:30 CET",
+      "tags": [
+        "Production",
+        "Interviews"
+      ],
+      "roomId": "ep-interviews"
+    },
+    {
+      "id": "ep-004",
+      "title": "State of WebRTC in 2026",
+      "host": "Alex Chen",
+      "description": "A deep dive into the underlying technology powering platforms like Connecting Dot.",
+      "imageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop",
+      "status": "recorded",
+      "date": "2026-04-20",
+      "tags": [
+        "WebRTC",
+        "Engineering"
+      ],
+      "roomId": "ep-webrtc-2026"
+    },
+    {
+      "id": "43453c42-fe4b-410b-948f-161cf5c150c4",
+      "title": "Test Live Show",
+      "host": "Admin",
+      "guest": "John Guest",
+      "description": "",
+      "imageUrl": "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=1200&auto=format&fit=crop",
+      "status": "recorded",
+      "date": "2026-06-04",
+      "time": "",
+      "tags": [],
+      "roomId": "ep-897ccd61"
+    }
+  ],
+  "settings": {
+    "showName": "Connecting Dot Studio",
+    "hostKey": "SCCG-STUDIO-2026"
+  },
+  "chat_messages": [],
+  "integrations": {},
+  "users": [
+    {
+      "id": "admin-id",
+      "email": "admin@connectingdot.studio",
+      "password": "9a4aabf0e5cf71cae2cea646613ce7e2a5919fa758e56819704be25a3a2c1f0b",
+      "name": "Admin",
+      "role": "admin",
+      "permissions": [
+        "all"
+      ]
+    },
+    {
+      "id": "super-admin-id",
+      "email": "hasnain@mysccg.de",
+      "password": "16ef861031711aa138de7cc5b81a45685055a1b3ac7f18ac798a4cc31e4f102d",
+      "name": "MD Hasnain",
+      "role": "super-admin",
+      "permissions": [
+        "all"
+      ]
+    }
+  ]
+}

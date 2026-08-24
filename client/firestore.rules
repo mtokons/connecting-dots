@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// Firestore security rules for Connecting Dot Studio.
+//
+// Strategy:
+//   - Episodes are PUBLIC READ (the homepage shows them) but writes go
+//     through the Oracle VM API (which holds the host-key). The frontend
+//     should never write to Firestore directly.
+//   - chat_messages are NOT readable from clients — only the backend
+//     service account (firebase-admin) can read them; viewers see chat
+//     via Socket.io after the server fans it out.
+//   - settings + integrations are server-only.
+//
+// firebase-admin (used by the Oracle VM) BYPASSES all rules, so the
+// backend continues to read/write everything.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /episodes/{id} {
+      allow read: if true;
+      allow write: if false; // server-only via firebase-admin
+    }
+    match /chat_messages/{id} {
+      allow read, write: if false;
+    }
+    match /settings/{key} {
+      allow read, write: if false;
+    }
+    match /integrations/{key} {
+      allow read, write: if false;
+    }
+  }
+}

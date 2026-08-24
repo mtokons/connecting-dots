@@ -1,0 +1,135 @@
+import { Router, Request, Response } from 'express';
+import { db } from '../services/db';
+import crypto from 'crypto';
+
+const router = Router();
+
+/** Simple HMAC token — much safer than base64(email:ts). */
+const TOKEN_SECRET = process.env.AUTH_SECRET || crypto.randomBytes(32).toString('hex');
+
+export function signToken(payload: { email: string; role: string; name: string }): string {
+  const data = JSON.stringify({ ...payload, iat: Date.now() });
+  const sig = crypto.createHmac('sha256', TOKEN_SECRET).update(data).digest('hex');
+  return Buffer.from(JSON.stringify({ data, sig })).toString('base64');
+}
+
+export function verifyToken(token: string): { email: string; role: string; name: string; iat: number } | null {
+  try {
+    const { data, sig } = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
+    const expected = crypto.createHmac('sha256', TOKEN_SECRET).update(data).digest('hex');
+    if (sig !== expected) return null;
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
+
+// Seed super-admin + admin on first boot
+const ensureSuperAdmin = async () => {
+  const superEmail = process.env.SUPER_ADMIN_EMAIL || 'hasnain@mysccg.de';
+  const superPw = process.env.SUPER_ADMIN_PASSWORD || 'Htokon@12';
+  const existing = await db.findUserByEmail(superEmail);
+  const hash = crypto.createHash('sha256').update(superPw).digest('hex');
+  if (!existing) {
+    await db.createUser({
+      id: 'super-admin-id',
+      email: superEmail,
+      password: hash,
+      name: process.env.SUPER_ADMIN_NAME || 'MD Hasnain',
+      role: 'super-admin',
+      permissions: ['all'],
+    });
+    console.log(`✅ Super Admin seeded (${superEmail})`);
+  } else if (existing.password !== hash) {
+    await db.updateUser(existing.id, { password: hash });
+    console.log(`🔄 Super Admin password re-synced`);
+  }
+};
+
+const ensureAdmin = async () => {
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@connectingdot.studio';
+  const adminPw = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
+  const existing = await db.findUserByEmail(adminEmail);
+  const hash = crypto.createHash('sha256').update(adminPw).digest('hex');
+  if (!existing) {
+    await db.createUser({
+      id: 'admin-id',
+      email: adminEmail,
+      password: hash,
+      name: process.env.ADMIN_NAME || 'Admin',
+      role: 'admin',
+      permissions: ['all'],
+    });
+    console.log(`✅ Admin seeded (${adminEmail})`);
+  } else if (existing.password !== hash) {
+    await db.updateUser(existing.id, { password: hash });
+    console.log(`🔄 Admin password re-synced`);
+  }
+};
+
+void ensureSuperAdmin();
+void ensureAdmin();
+
+router.post('/login', async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400).json({ error: 'Email and password required' });
+    return;
+  }
+
+  const user = await db.findUserByEmail(email);
+  if (!user) {
+    res.status(401).json({ error: 'Invalid credentials' });
+    return;
+  }
+
+  const hash = crypto.createHash('sha256').update(password).digest('hex');
+  if (user.password !== hash) {
+    res.status(401).json({ error: 'Invalid credentials' });
+    return;
+  }
+
+  const token = signToken({ email: user.email, role: user.role, name: user.name });
+
+  res.json({
+    token,
+    user: { email: user.email, name: user.name, role: user.role },
+  });
+});
+
+/** Verify token endpoint */
+router.get('/me', (req: Request, res: Response) => {
+  const authHeader = req.header('authorization');
+  const token = authHeader?.replace('Bearer ', '') || '';
+  const payload = verifyToken(token);
+  if (!payload) {
+    res.status(401).json({ error: 'Invalid or expired token' });
+    return;
+  }
+  res.json({ email: payload.email, role: payload.role, name: payload.name });
+});
+
+/** Update Host Key (admin only) */
+router.post('/settings/host-key', async (req: Request, res: Response) => {
+  const authHeader = req.header('authorization');
+  const token = authHeader?.replace('Bearer ', '') || req.body.token || '';
+  const payload = verifyToken(token);
+
+  if (!payload || (payload.role !== 'admin' && payload.role !== 'super-admin')) {
+    res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+
+  const { newHostKey } = req.body;
+  if (!newHostKey || newHostKey.length < 8) {
+    res.status(400).json({ error: 'Host Key must be at least 8 characters' });
+    return;
+  }
+
+  await db.setSetting('system_host_key', newHostKey);
+  process.env.HOST_KEY = newHostKey;
+
+  res.json({ success: true, message: 'Host Key updated' });
+});
+
+export default router;

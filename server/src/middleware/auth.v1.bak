@@ -1,0 +1,56 @@
+import type { Request, Response, NextFunction } from 'express';
+import { db } from '../services/db';
+import { verifyToken } from '../routes/auth';
+
+/**
+ * Host-key OR Bearer-token auth middleware.
+ * Accepts either a valid host key or a valid admin token.
+ */
+export const requireHostKey = async (req: Request, res: Response, next: NextFunction) => {
+  // Check Bearer token first (admin users)
+  const authHeader = req.header('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const payload = verifyToken(authHeader.replace('Bearer ', ''));
+    if (payload && (payload.role === 'admin' || payload.role === 'super-admin')) {
+      next();
+      return;
+    }
+  }
+
+  // Fall back to host key
+  const provided =
+    (req.header('x-host-key') as string | undefined) ??
+    (typeof req.query.hostKey === 'string' ? req.query.hostKey : undefined);
+
+  const dbKey = await db.getSetting<string>('system_host_key');
+  const expected = dbKey || process.env.HOST_KEY;
+
+  if (!expected) {
+    // No host key configured — allow (first-time setup)
+    next();
+    return;
+  }
+
+  if (!provided || provided !== expected) {
+    res.status(401).json({ error: 'Unauthorized — valid credentials required' });
+    return;
+  }
+  next();
+};
+
+/**
+ * Require a valid admin token (Bearer).
+ */
+export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.header('authorization');
+  const token = authHeader?.replace('Bearer ', '') || '';
+  const payload = verifyToken(token);
+
+  if (!payload || payload.role !== 'admin') {
+    res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+
+  (req as any).user = payload;
+  next();
+};

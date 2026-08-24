@@ -1,43 +1,51 @@
 # Dependencies
 node_modules/
-.pnp/
+.pnp
 .pnp.js
 
-# Build outputs
+# Build & Dist
 dist/
 build/
+.next/
+out/
+.firebase/
+
+# Environment files & Secrets
+.env
+.env.*
+!.env.example
+*.env
+*.env.*
+*.key
+*.key.pub
+*.pem
+*.cert
+*.crt
+*firebase-adminsdk*.json
+*service-account*.json
+
+# Databases & Archives
 *.db
+*.db-journal
 *.db-wal
 *.db-shm
+*.sqlite
+*.sqlite3
+*.zip
+*.tar.gz
+update_env.sh
 
-# Environment
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Media / Recordings / Temp
+recordings/
+/tmp/
+/tmp/connecting-dot-recordings/
 
 # Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-*.log
 
-# OS files
+# System files
 .DS_Store
 Thumbs.db
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Cache
-.cache/
-.eslintcache
-.parcel-cache/
-
-# Misc
-*.pem
-coverage/

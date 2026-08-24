@@ -1,21 +1,16 @@
 {
-  "name": "connecting-dots-bd-election",
+  "name": "connecting-dot",
   "version": "1.0.0",
-  "description": "Connecting Dots — বাংলাদেশি সংবাদ, পডকাস্ট ও লাইভ স্ট্রিমিং পোর্টাল। জার্মানি থেকে পরিচালিত।",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "client": "cd client && npm run dev",
-    "server": "cd server && npm run dev",
-    "build": "cd client && npm run build",
-    "start": "cd server && node index.js",
-    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
-    "setup": "node server/scripts/seedData.js"
+    "dev": "concurrently \"cd client && npm run dev\" \"cd server && npm run dev\"",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build && cd ../server && npm run build",
+    "deploy:hosting": "cd client && npm run build && firebase deploy --only hosting",
+    "deploy:rules": "cd client && firebase deploy --only firestore:rules,firestore:indexes",
+    "deploy:server": "cd server && docker compose up -d --build"
   },
-  "keywords": ["bangladesh", "news", "podcast", "streaming", "election", "ai", "media-portal", "germany"],
-  "author": "Connecting Dots",
-  "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.0"
   }
 }
