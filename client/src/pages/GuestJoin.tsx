@@ -4,6 +4,10 @@ import { motion } from 'framer-motion';
 import { API_BASE, COLORS, FONTS } from '../utils/constants';
 import LogoWatermark from '../components/LogoWatermark';
 import type { Episode } from '../types';
+import { usePodcastMedia } from '../hooks/usePodcastMedia';
+import VirtualBackground from '../components/studio/VirtualBackground';
+import BackgroundSelector from '../components/studio/BackgroundSelector';
+import { BackgroundType } from '../hooks/useVirtualBackground';
 
 const GuestJoin: React.FC = () => {
   const { episodeId } = useParams<{ episodeId: string }>();
@@ -12,6 +16,8 @@ const GuestJoin: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [name, setName] = useState('');
+  const { videoTrack, isCameraOn, isMicOn, toggleCamera, toggleMic } = usePodcastMedia();
+  const [backgroundType, setBackgroundType] = useState<BackgroundType>('original');
 
   useEffect(() => {
     const fetchEpisode = async () => {
@@ -182,6 +188,59 @@ const GuestJoin: React.FC = () => {
               boxSizing: 'border-box',
             }}
           />
+        </div>
+
+        {/* Media Preview & Controls */}
+        <div style={{ textAlign: 'left', marginBottom: 24 }}>
+          <label style={{
+            display: 'block', fontSize: 12, fontWeight: 900,
+            color: 'rgba(255,255,255,0.6)', marginBottom: 8, letterSpacing: '0.1em',
+          }}>
+            CAMERA & MIC
+          </label>
+          <div style={{ 
+            height: 200, 
+            background: '#000', 
+            borderRadius: 16, 
+            marginBottom: 12,
+            overflow: 'hidden',
+            position: 'relative'
+          }}>
+            <VirtualBackground videoTrack={videoTrack} backgroundType={backgroundType} />
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+            <button
+              onClick={toggleCamera}
+              style={{
+                flex: 1, padding: '12px', borderRadius: 12,
+                background: isCameraOn ? 'rgba(0,168,255,0.2)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${isCameraOn ? COLORS.primaryBlue : 'rgba(255,255,255,0.1)'}`,
+                color: COLORS.white, cursor: 'pointer'
+              }}
+            >
+              {isCameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
+            </button>
+            <button
+              onClick={toggleMic}
+              style={{
+                flex: 1, padding: '12px', borderRadius: 12,
+                background: isMicOn ? 'rgba(0,168,255,0.2)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${isMicOn ? COLORS.primaryBlue : 'rgba(255,255,255,0.1)'}`,
+                color: COLORS.white, cursor: 'pointer'
+              }}
+            >
+              {isMicOn ? 'Turn Off Mic' : 'Turn On Mic'}
+            </button>
+          </div>
+          
+          <label style={{
+            display: 'block', fontSize: 12, fontWeight: 900,
+            color: 'rgba(255,255,255,0.6)', marginBottom: 8, letterSpacing: '0.1em',
+            marginTop: 16
+          }}>
+            VIRTUAL BACKGROUND
+          </label>
+          <BackgroundSelector selectedType={backgroundType} onSelect={setBackgroundType} />
         </div>
 
         <button

@@ -14,7 +14,7 @@ interface UseRecordingReturn {
   downloadRecording: () => void;
 }
 
-const useRecording = (canvasRef: React.RefObject<HTMLCanvasElement>): UseRecordingReturn => {
+const useRecording = (canvasRef: React.RefObject<HTMLCanvasElement>, audioTracks: MediaStreamTrack[] = []): UseRecordingReturn => {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
@@ -58,6 +58,21 @@ const useRecording = (canvasRef: React.RefObject<HTMLCanvasElement>): UseRecordi
       if (!canvasRef.current) return;
 
       const stream = canvasRef.current.captureStream(30);
+      
+      // Mix audio tracks
+      if (audioTracks.length > 0) {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const dest = audioCtx.createMediaStreamDestination();
+        audioTracks.forEach(track => {
+          if (track) {
+            const ms = new MediaStream([track]);
+            const source = audioCtx.createMediaStreamSource(ms);
+            source.connect(dest);
+          }
+        });
+        dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+      }
+
       const recorder = new MediaRecorder(stream, {
         mimeType: 'video/webm;codecs=vp9',
       });
