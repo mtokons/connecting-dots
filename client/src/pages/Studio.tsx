@@ -76,7 +76,7 @@ const Studio: React.FC = () => {
   
   const [studioSettings, setStudioSettings] = useState<StudioSettings>({
     backgroundStyle: 'studio-dark',
-    accentColor: COLORS.primaryBlue,
+    accentColor: COLORS.white,
     showName: 'Connecting Dot Podcast',
     episodeNumber: 1,
     logoUrl: null,

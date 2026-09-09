@@ -26,14 +26,15 @@ const StudioBackground: React.FC<StudioBackgroundProps> = ({
   backgroundImageUrl,
 }) => {
   const bgColors: Record<string, string> = {
-    'studio-dark': '#050a15',
-    'studio-light': '#1a2a3a',
-    'blur': '#0a1628',
-    'custom': '#0d1020',
+    'studio-dark': '#000000',
+    'studio-light': '#000000',
+    'blur': '#000000',
+    'custom': '#000000',
   };
 
   return (
     <>
+      <style>{livePulseKeyframes}</style>
       <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', background: bgColors[backgroundStyle] || '#050a15' }}>
         {/* Custom background image */}
         {backgroundStyle === 'custom' && backgroundImageUrl && (

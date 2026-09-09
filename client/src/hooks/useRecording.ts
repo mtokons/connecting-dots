@@ -74,7 +74,7 @@ const useRecording = (canvasRef: React.RefObject<HTMLCanvasElement>, audioTracks
       }
 
       const recorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp9',
+        mimeType: 'video/webm;codecs=vp9,opus',
       });
 
       chunksRef.current = [];

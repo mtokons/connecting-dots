@@ -85,7 +85,17 @@ const useStudioRoom = (): UseStudioRoomReturn => {
         });
 
         await nextRoom.connect(urlOverride ?? LIVEKIT_URL, token);
-        await nextRoom.localParticipant.enableCameraAndMicrophone();
+        // Request Full HD video and audio tracks
+        const constraints = { video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true };
+        const media = await navigator.mediaDevices.getUserMedia(constraints);
+        const videoTrack = media.getVideoTracks()[0];
+        const audioTrack = media.getAudioTracks()[0];
+        // Publish video track
+        await nextRoom.localParticipant.publishTrack(videoTrack);
+        // Publish audio track if available
+        if (audioTrack) {
+          await nextRoom.localParticipant.publishTrack(audioTrack);
+        }
 
         setRoom(nextRoom);
         setLocalParticipant(nextRoom.localParticipant);
