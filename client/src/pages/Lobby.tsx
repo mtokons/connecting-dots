@@ -129,7 +129,7 @@ const Lobby: React.FC = () => {
                 fontFamily: FONTS.display,
                 fontSize: 16,
                 fontWeight: 900,
-                color: COLORS.primaryBlue,
+                color: COLORS.white,
                 letterSpacing: '0.4em',
                 textTransform: 'uppercase',
                 marginBottom: 20,

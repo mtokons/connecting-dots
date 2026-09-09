@@ -46,7 +46,7 @@ const CaptionsOverlay: React.FC<Props> = ({ lines, current, visible }) => {
       }}
     >
       {speaker && (
-        <span style={{ color: COLORS.primaryBlue, fontSize: 12, letterSpacing: '0.2em', display: 'block', marginBottom: 4, fontWeight: 900 }}>
+        <span style={{ color: COLORS.white, fontSize: 12, letterSpacing: '0.2em', display: 'block', marginBottom: 4, fontWeight: 900 }}>
           {speaker.toUpperCase()}
         </span>
       )}

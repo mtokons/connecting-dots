@@ -86,7 +86,7 @@ const AudienceChat: React.FC<Props> = ({ roomId, author, isHost = false, channel
           style={{
             background: 'rgba(0,168,255,0.12)',
             border: '1px solid rgba(0,168,255,0.3)',
-            color: COLORS.primaryBlue,
+            color: COLORS.white,
             padding: '6px 12px',
             borderRadius: 10,
             fontSize: 10,
@@ -131,7 +131,7 @@ const AudienceChat: React.FC<Props> = ({ roomId, author, isHost = false, channel
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: COLORS.primaryBlue }}>{m.author}</span>
+              <span style={{ fontSize: 11, fontWeight: 900, color: COLORS.white }}>{m.author}</span>
               {isHost && (
                 <div style={{ display: 'flex', gap: 4 }}>
                   <button
@@ -185,7 +185,7 @@ const AudienceChat: React.FC<Props> = ({ roomId, author, isHost = false, channel
             padding: '10px 16px',
             borderRadius: 12,
             border: 'none',
-            background: COLORS.primaryBlue,
+            background: COLORS.white,
             color: '#fff',
             fontWeight: 900,
             cursor: 'pointer',

@@ -25,8 +25,8 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({ selectedType, o
           style={{
             padding: '8px 16px',
             borderRadius: 8,
-            background: selectedType === opt.id ? COLORS.primaryBlue : 'rgba(255,255,255,0.1)',
-            border: `1px solid ${selectedType === opt.id ? COLORS.primaryBlue : 'transparent'}`,
+            background: selectedType === opt.id ? COLORS.white : 'rgba(255,255,255,0.1)',
+            border: `1px solid ${selectedType === opt.id ? COLORS.white : 'transparent'}`,
             color: COLORS.white,
             fontFamily: FONTS.ui,
             fontSize: 13,

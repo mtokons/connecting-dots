@@ -15,7 +15,7 @@ interface OverlayEditorProps {
 
 const colorSwatches = [
   COLORS.white,
-  COLORS.primaryBlue,
+  COLORS.white,
   '#10B981',
   '#F59E0B',
   COLORS.liveRed,
@@ -106,7 +106,7 @@ const OverlayEditor: React.FC<OverlayEditorProps> = ({
       {/* Row 1: GFX buttons + color/size */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{
-          fontFamily: FONTS.ui, fontSize: 9, fontWeight: 900, color: COLORS.primaryBlue,
+          fontFamily: FONTS.ui, fontSize: 9, fontWeight: 900, color: COLORS.white,
           textTransform: 'uppercase', letterSpacing: '0.3em', marginRight: 4,
         }}>GFX</span>
 
@@ -161,7 +161,7 @@ const OverlayEditor: React.FC<OverlayEditorProps> = ({
                 fontFamily: FONTS.ui, fontSize: 11, fontWeight: 900,
                 padding: '5px 10px', borderRadius: 7, border: 'none',
                 background: activeFontSize === f.value ? 'rgba(0,168,255,0.2)' : 'transparent',
-                color: activeFontSize === f.value ? COLORS.primaryBlue : 'rgba(255,255,255,0.3)',
+                color: activeFontSize === f.value ? COLORS.white : 'rgba(255,255,255,0.3)',
                 cursor: 'pointer', transition: 'all 0.2s',
               }}
             >
@@ -238,7 +238,7 @@ const OverlayEditor: React.FC<OverlayEditorProps> = ({
             >
               <span style={{
                 fontFamily: FONTS.ui, fontSize: 8, fontWeight: 900,
-                color: COLORS.primaryBlue, textTransform: 'uppercase', letterSpacing: '0.1em',
+                color: COLORS.white, textTransform: 'uppercase', letterSpacing: '0.1em',
               }}>
                 {o.type}
               </span>

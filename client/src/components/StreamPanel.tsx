@@ -386,7 +386,7 @@ const StreamPanel: React.FC<StreamPanelProps> = ({
                           width: 44,
                           height: 22,
                           borderRadius: 11,
-                          background: target.enabled ? COLORS.primaryBlue : 'rgba(255,255,255,0.05)',
+                          background: target.enabled ? COLORS.white : 'rgba(255,255,255,0.05)',
                           cursor: 'pointer',
                           position: 'relative',
                           transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
@@ -529,7 +529,7 @@ const StreamPanel: React.FC<StreamPanelProps> = ({
                     style={{
                       background: 'rgba(0,168,255,0.1)',
                       border: '1px solid rgba(0,168,255,0.3)',
-                      color: COLORS.primaryBlue,
+                      color: COLORS.white,
                       fontSize: 9,
                       padding: '4px 8px',
                       borderRadius: 6,
@@ -657,9 +657,9 @@ const StreamPanel: React.FC<StreamPanelProps> = ({
                     style={{
                       padding: '14px',
                       borderRadius: 16,
-                      border: `1px solid ${settings.theme === t ? COLORS.primaryBlue : 'rgba(255,255,255,0.08)'}`,
+                      border: `1px solid ${settings.theme === t ? COLORS.white : 'rgba(255,255,255,0.08)'}`,
                       background: settings.theme === t ? 'rgba(0,168,255,0.1)' : 'rgba(255,255,255,0.05)',
-                      color: settings.theme === t ? COLORS.primaryBlue : COLORS.white,
+                      color: settings.theme === t ? COLORS.white : COLORS.white,
                       fontFamily: FONTS.ui,
                       fontSize: 11,
                       fontWeight: 800,
@@ -678,7 +678,7 @@ const StreamPanel: React.FC<StreamPanelProps> = ({
                 Brand Color
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                {[COLORS.primaryBlue, '#FF4D4D', '#10B981', '#F59E0B', '#8B5CF6'].map(c => (
+                {[COLORS.white, '#FF4D4D', '#10B981', '#F59E0B', '#8B5CF6'].map(c => (
                   <div 
                     key={c}
                     onClick={() => onSettingsChange({ accentColor: c })}

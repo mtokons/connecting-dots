@@ -63,7 +63,7 @@ const Header: React.FC = () => {
             style={{
               background: 'none',
               border: 'none',
-              color: location.pathname === item.path ? COLORS.primaryBlue : COLORS.white,
+              color: location.pathname === item.path ? COLORS.white : COLORS.white,
               fontFamily: FONTS.display,
               fontSize: 14,
               fontWeight: 900,

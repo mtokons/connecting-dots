@@ -54,7 +54,7 @@ const Home: React.FC = () => {
     return (
       <div style={{ minHeight: '100vh', background: COLORS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.white, fontFamily: FONTS.ui }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 40, height: 40, border: '4px solid rgba(255,255,255,0.1)', borderTopColor: COLORS.primaryBlue, borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: 20 }} />
+          <div style={{ width: 40, height: 40, border: '4px solid rgba(255,255,255,0.1)', borderTopColor: COLORS.white, borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: 20 }} />
           <p style={{ fontWeight: 800, letterSpacing: '0.1em' }}>LOADING STUDIO DATA...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -145,8 +145,8 @@ const Home: React.FC = () => {
               width: 2 + Math.random() * 4,
               height: 2 + Math.random() * 4,
               borderRadius: '50%',
-              background: COLORS.primaryBlue,
-              boxShadow: `0 0 10px ${COLORS.primaryBlue}`
+              background: COLORS.white,
+              boxShadow: `0 0 10px ${COLORS.white}`
             }}
           />
         ))}
@@ -296,7 +296,7 @@ const Home: React.FC = () => {
         <div style={{ marginTop: 80 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
             <h2 style={{ fontFamily: FONTS.display, fontSize: 32, fontWeight: 900 }}>Upcoming Schedule</h2>
-            <button style={{ background: 'transparent', color: COLORS.primaryBlue, border: 'none', fontWeight: 800, cursor: 'pointer', fontSize: 14 }}>VIEW ALL EVENTS →</button>
+            <button style={{ background: 'transparent', color: COLORS.white, border: 'none', fontWeight: 800, cursor: 'pointer', fontSize: 14 }}>VIEW ALL EVENTS →</button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
@@ -327,7 +327,7 @@ const Home: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: 14, color: COLORS.primaryBlue, fontWeight: 900, letterSpacing: '0.1em' }}>
+                  <div style={{ fontSize: 14, color: COLORS.white, fontWeight: 900, letterSpacing: '0.1em' }}>
                     {new Date(ep.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>{ep.time}</div>

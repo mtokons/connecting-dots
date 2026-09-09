@@ -64,7 +64,7 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({ onClose, onCo
         <div style={{ background: 'rgba(255,0,0,0.06)', border: '1px solid rgba(255,0,0,0.15)', borderRadius: 16, padding: '16px 20px', marginBottom: 28 }}>
           <p style={{ fontFamily: FONTS.ui, fontSize: 11, fontWeight: 900, color: '#FF6B6B', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 10 }}>How to get your Stream Key</p>
           <ol style={{ fontFamily: FONTS.ui, fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 2, margin: 0, paddingLeft: 18 }}>
-            <li>Go to <a href="https://studio.youtube.com" target="_blank" rel="noreferrer" style={{ color: COLORS.primaryBlue }}>studio.youtube.com</a></li>
+            <li>Go to <a href="https://studio.youtube.com" target="_blank" rel="noreferrer" style={{ color: COLORS.white }}>studio.youtube.com</a></li>
             <li>Click <strong style={{ color: '#fff' }}>Create → Go Live</strong></li>
             <li>Choose <strong style={{ color: '#fff' }}>Streaming software</strong></li>
             <li>Copy the <strong style={{ color: '#fff' }}>Stream key</strong> shown</li>
@@ -74,7 +74,7 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({ onClose, onCo
 
         <div style={{ display: 'grid', gap: 20 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: COLORS.primaryBlue, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 10 }}>Channel Name <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9 }}>(display only)</span></label>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: COLORS.white, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 10 }}>Channel Name <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9 }}>(display only)</span></label>
             <input
               value={channelName}
               onChange={(e) => setChannelName(e.target.value)}
@@ -96,7 +96,7 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({ onClose, onCo
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: COLORS.primaryBlue, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 10 }}>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: COLORS.white, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 10 }}>
               YouTube Stream Key <span style={{ color: '#FF6B6B', fontSize: 9 }}>* required</span>
             </label>
             <input
@@ -121,7 +121,7 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({ onClose, onCo
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: COLORS.primaryBlue, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 10 }}>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: COLORS.white, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 10 }}>
               Video ID <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9 }}>(for live chat embed)</span>
             </label>
             <input

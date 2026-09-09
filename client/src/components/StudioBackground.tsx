@@ -133,7 +133,7 @@ const StudioBackground: React.FC<StudioBackgroundProps> = ({
                 style={{
                   fontFamily: FONTS.ui,
                   fontSize: 11,
-                  color: COLORS.primaryBlue,
+                  color: COLORS.white,
                   fontWeight: 800,
                   letterSpacing: '0.3em',
                   textTransform: 'uppercase',

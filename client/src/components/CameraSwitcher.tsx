@@ -23,7 +23,7 @@ const layouts: { value: MultiCameraLayout; label: string; icon: string; shortcut
 
 /** Mini layout thumbnail SVG */
 const LayoutThumb: React.FC<{ layout: MultiCameraLayout; active: boolean }> = ({ layout, active }) => {
-  const fg = active ? COLORS.primaryBlue : 'rgba(255,255,255,0.25)';
+  const fg = active ? COLORS.white : 'rgba(255,255,255,0.25)';
   const w = 44;
   const h = 28;
   const r = 3;
@@ -197,7 +197,7 @@ const CameraSwitcher: React.FC<Props> = ({
                 padding: '8px 4px 4px',
                 borderRadius: 10,
                 border: isActive
-                  ? `1px solid ${COLORS.primaryBlue}`
+                  ? `1px solid ${COLORS.white}`
                   : '1px solid rgba(255,255,255,0.06)',
                 background: isActive ? 'rgba(0,168,255,0.1)' : 'rgba(0,0,0,0.2)',
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
@@ -216,7 +216,7 @@ const CameraSwitcher: React.FC<Props> = ({
                   fontSize: 7,
                   fontWeight: 900,
                   letterSpacing: '0.1em',
-                  color: isActive ? COLORS.primaryBlue : 'rgba(255,255,255,0.4)',
+                  color: isActive ? COLORS.white : 'rgba(255,255,255,0.4)',
                   textTransform: 'uppercase',
                 }}
               >

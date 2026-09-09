@@ -628,7 +628,7 @@ const Studio: React.FC = () => {
                     padding: '14px 18px',
                     background: showGfx ? 'rgba(0,168,255,0.15)' : 'transparent',
                     border: 'none', borderRight: '1px solid rgba(255,255,255,0.06)',
-                    color: showGfx ? COLORS.primaryBlue : 'rgba(255,255,255,0.5)',
+                    color: showGfx ? COLORS.white : 'rgba(255,255,255,0.5)',
                     fontFamily: FONTS.ui, fontSize: 9, fontWeight: 900,
                     letterSpacing: '0.15em', cursor: 'pointer',
                     transition: 'all 0.2s',
@@ -712,7 +712,7 @@ const Studio: React.FC = () => {
                     padding: '8px 6px',
                     borderRadius: 10,
                     border: 'none',
-                    background: sidePanel === k ? COLORS.primaryBlue : 'rgba(255,255,255,0.05)',
+                    background: sidePanel === k ? COLORS.white : 'rgba(255,255,255,0.05)',
                     color: '#fff',
                     fontSize: 9,
                     fontWeight: 900,
@@ -798,7 +798,7 @@ const Studio: React.FC = () => {
                           padding: '12px 8px', borderRadius: 12, cursor: 'pointer',
                           background: bg.preview,
                           border: studioSettings.backgroundStyle === bg.value
-                            ? '2px solid ' + COLORS.primaryBlue
+                            ? '2px solid ' + COLORS.white
                             : '1px solid rgba(255,255,255,0.08)',
                           color: '#fff', fontSize: 10, fontWeight: 800,
                           letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -1113,7 +1113,7 @@ const Studio: React.FC = () => {
                       color: 'rgba(255,255,255,0.6)', fontSize: 13,
                       fontFamily: FONTS.ui, textAlign: 'center',
                     }}>
-                      Joining as <strong style={{ color: COLORS.primaryBlue }}>Guest</strong> — the host will bring you on stage
+                      Joining as <strong style={{ color: COLORS.white }}>Guest</strong> — the host will bring you on stage
                     </div>
                   )}
 

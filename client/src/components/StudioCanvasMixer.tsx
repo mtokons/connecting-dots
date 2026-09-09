@@ -169,7 +169,7 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
   lowerThird,
   accentColor,
 }) => {
-  const resolvedAccent = accentColor || COLORS.primaryBlue;
+  const resolvedAccent = accentColor || COLORS.white;
   const rafRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(performance.now());
   const logoImageRef = useRef<HTMLImageElement | null>(null);

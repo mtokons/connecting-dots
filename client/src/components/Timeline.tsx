@@ -120,7 +120,7 @@ const Timeline: React.FC<TimelineProps> = ({
           <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.4)' }}>
             TIMELINE
           </div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.primaryBlue }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.white }}>
             {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
@@ -148,7 +148,7 @@ const Timeline: React.FC<TimelineProps> = ({
             style={{
               ...zoomBtnStyle,
               background: showAddMarker ? 'rgba(0,168,255,0.15)' : 'rgba(255,255,255,0.05)',
-              color: showAddMarker ? COLORS.primaryBlue : 'rgba(255,255,255,0.5)',
+              color: showAddMarker ? COLORS.white : 'rgba(255,255,255,0.5)',
               fontSize: 11,
               padding: '4px 10px',
             }}
@@ -187,7 +187,7 @@ const Timeline: React.FC<TimelineProps> = ({
               padding: '6px 14px',
               borderRadius: 8,
               border: 'none',
-              background: COLORS.primaryBlue,
+              background: COLORS.white,
               color: '#fff',
               fontSize: 10,
               fontWeight: 900,

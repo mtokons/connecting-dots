@@ -135,7 +135,7 @@ const Login: React.FC = () => {
           </form>
 
           <p style={{ marginTop: 32, fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
-            Don't have an account? <span style={{ color: COLORS.primaryBlue, fontWeight: 800, cursor: 'pointer' }}>Sign up free</span>
+            Don't have an account? <span style={{ color: COLORS.white, fontWeight: 800, cursor: 'pointer' }}>Sign up free</span>
           </p>
         </motion.div>
       </main>

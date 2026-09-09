@@ -53,7 +53,7 @@ const GuestJoin: React.FC = () => {
     return (
       <div style={{ minHeight: '100vh', background: COLORS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', color: COLORS.white, fontFamily: FONTS.ui }}>
-          <div style={{ width: 48, height: 48, border: '4px solid rgba(255,255,255,0.1)', borderTopColor: COLORS.primaryBlue, borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 20px' }} />
+          <div style={{ width: 48, height: 48, border: '4px solid rgba(255,255,255,0.1)', borderTopColor: COLORS.white, borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 20px' }} />
           <p style={{ fontWeight: 800, letterSpacing: '0.1em', fontSize: 14 }}>LOADING...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -141,7 +141,7 @@ const GuestJoin: React.FC = () => {
           <p style={{
             fontFamily: FONTS.ui, fontSize: 11, fontWeight: 900,
             letterSpacing: '0.15em', textTransform: 'uppercase',
-            color: COLORS.primaryBlue, marginBottom: 8,
+            color: COLORS.white, marginBottom: 8,
           }}>
             YOU'RE INVITED TO
           </p>
@@ -214,7 +214,7 @@ const GuestJoin: React.FC = () => {
               style={{
                 flex: 1, padding: '12px', borderRadius: 12,
                 background: isCameraOn ? 'rgba(0,168,255,0.2)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${isCameraOn ? COLORS.primaryBlue : 'rgba(255,255,255,0.1)'}`,
+                border: `1px solid ${isCameraOn ? COLORS.white : 'rgba(255,255,255,0.1)'}`,
                 color: COLORS.white, cursor: 'pointer'
               }}
             >
@@ -225,7 +225,7 @@ const GuestJoin: React.FC = () => {
               style={{
                 flex: 1, padding: '12px', borderRadius: 12,
                 background: isMicOn ? 'rgba(0,168,255,0.2)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${isMicOn ? COLORS.primaryBlue : 'rgba(255,255,255,0.1)'}`,
+                border: `1px solid ${isMicOn ? COLORS.white : 'rgba(255,255,255,0.1)'}`,
                 color: COLORS.white, cursor: 'pointer'
               }}
             >

@@ -5,7 +5,7 @@ export const BRAND = {
 } as const;
 
 export const COLORS = {
-  primaryBlue: '#00A8FF',
+  primaryBlue: '#FFFFFF', // Updated to white for UI consistency
   darkBlue: '#003875',
   lightBlue: '#E8F1FB',
   white: '#FFFFFF',

@@ -284,7 +284,7 @@ const MultiCameraPublisher: React.FC<Props> = ({
                   borderRadius: 8,
                   border: '1px solid rgba(0,168,255,0.2)',
                   background: 'rgba(0,168,255,0.08)',
-                  color: COLORS.primaryBlue,
+                  color: COLORS.white,
                   fontSize: 9,
                   fontWeight: 900,
                   letterSpacing: '0.1em',

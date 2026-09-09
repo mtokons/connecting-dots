@@ -109,7 +109,7 @@ const ExportPresets: React.FC<Props> = ({ selected, onSelect, disabled = false }
                 padding: '12px 8px',
                 borderRadius: 14,
                 border: isSelected
-                  ? `1px solid ${COLORS.primaryBlue}`
+                  ? `1px solid ${COLORS.white}`
                   : '1px solid rgba(255,255,255,0.06)',
                 background: isSelected ? 'rgba(0,168,255,0.1)' : 'rgba(255,255,255,0.03)',
                 cursor: disabled ? 'not-allowed' : 'pointer',
@@ -126,7 +126,7 @@ const ExportPresets: React.FC<Props> = ({ selected, onSelect, disabled = false }
                 style={{
                   fontSize: 10,
                   fontWeight: 900,
-                  color: isSelected ? COLORS.primaryBlue : 'rgba(255,255,255,0.7)',
+                  color: isSelected ? COLORS.white : 'rgba(255,255,255,0.7)',
                   letterSpacing: '0.08em',
                 }}
               >

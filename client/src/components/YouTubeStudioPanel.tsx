@@ -278,7 +278,7 @@ const btn: React.CSSProperties = {
   padding: '10px 14px',
   borderRadius: 10,
   border: 'none',
-  background: COLORS.primaryBlue,
+  background: COLORS.white,
   color: '#fff',
   fontWeight: 900,
   cursor: 'pointer',

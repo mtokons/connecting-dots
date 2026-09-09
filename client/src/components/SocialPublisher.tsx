@@ -118,7 +118,7 @@ const SocialPublisher: React.FC<Props> = ({ defaultTitle = '', defaultMessage = 
             padding: '12px 16px',
             borderRadius: 12,
             border: 'none',
-            background: COLORS.primaryBlue,
+            background: COLORS.white,
             color: '#fff',
             fontWeight: 900,
             cursor: busy ? 'wait' : 'pointer',

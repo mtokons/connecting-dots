@@ -45,7 +45,7 @@ const LogoWatermark: React.FC<LogoWatermarkProps> = ({ size, variant }) => {
     variant === 'dark'
       ? COLORS.silver
       : variant === 'light'
-        ? COLORS.primaryBlue
+        ? COLORS.white
         : 'rgba(255,255,255,0.5)';
 
   return (

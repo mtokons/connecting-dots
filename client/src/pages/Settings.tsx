@@ -59,8 +59,8 @@ const Settings: React.FC = () => {
           onClick={() => navigate('/')}
           style={{
             background: 'transparent',
-            color: COLORS.primaryBlue,
-            border: `1px solid ${COLORS.primaryBlue}`,
+            color: COLORS.white,
+            border: `1px solid ${COLORS.white}`,
             borderRadius: 999,
             padding: '8px 20px',
             fontFamily: FONTS.ui,

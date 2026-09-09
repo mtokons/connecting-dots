@@ -208,7 +208,7 @@ const SocialMediaPanel: React.FC<Props> = ({
               type="checkbox"
               checked={scheduleEnabled}
               onChange={(e) => setScheduleEnabled(e.target.checked)}
-              style={{ accentColor: COLORS.primaryBlue }}
+              style={{ accentColor: COLORS.white }}
             />
             Schedule for later
           </label>

@@ -347,7 +347,7 @@ const AdminDashboard: React.FC = () => {
           {[
             { label: 'Active Sessions', value: rooms.length, color: '#10B981' },
             { label: 'Storage Used', value: storageInfo ? formatBytes(storageInfo.totalBytes) : '...', color: '#EF4444' },
-            { label: 'Saved Recordings', value: recordings.length, color: COLORS.primaryBlue },
+            { label: 'Saved Recordings', value: recordings.length, color: COLORS.white },
             { label: 'Upcoming', value: episodes.filter(e => e.status === 'upcoming').length, color: '#F59E0B' },
           ].map(stat => (
             <div key={stat.label} style={{
@@ -395,7 +395,7 @@ const AdminDashboard: React.FC = () => {
                         padding: '3px 10px', borderRadius: 8, fontSize: 10, fontWeight: 900,
                         letterSpacing: '0.1em', flexShrink: 0, marginLeft: 12,
                         background: ep.status === 'live' ? 'rgba(255,77,77,0.15)' : ep.status === 'upcoming' ? 'rgba(0,168,255,0.12)' : 'rgba(255,255,255,0.06)',
-                        color: ep.status === 'live' ? '#FF4D4D' : ep.status === 'upcoming' ? COLORS.primaryBlue : 'rgba(255,255,255,0.5)',
+                        color: ep.status === 'live' ? '#FF4D4D' : ep.status === 'upcoming' ? COLORS.white : 'rgba(255,255,255,0.5)',
                       }}>
                         {ep.status.toUpperCase()}
                       </span>
@@ -405,7 +405,7 @@ const AdminDashboard: React.FC = () => {
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       <button
                         onClick={() => navigate(`/studio/${ep.roomId}`)}
-                        style={{ ...btnSmall, background: 'rgba(0,168,255,0.1)', color: COLORS.primaryBlue }}
+                        style={{ ...btnSmall, background: 'rgba(0,168,255,0.1)', color: COLORS.white }}
                       >
                         🎬 ENTER STUDIO
                       </button>
@@ -491,10 +491,10 @@ const AdminDashboard: React.FC = () => {
                     border: '1px solid rgba(255,255,255,0.04)',
                   }}>
                     <div>
-                      <div style={{ fontWeight: 800, color: COLORS.primaryBlue, fontSize: 14 }}>{room.name}</div>
+                      <div style={{ fontWeight: 800, color: COLORS.white, fontSize: 14 }}>{room.name}</div>
                       <div style={{ fontSize: 12, opacity: 0.5 }}>{room.numParticipants} participants</div>
                     </div>
-                    <button onClick={() => navigate(`/studio/${room.name}`)} style={{ ...btnSmall, background: 'rgba(0,168,255,0.1)', color: COLORS.primaryBlue }}>
+                    <button onClick={() => navigate(`/studio/${room.name}`)} style={{ ...btnSmall, background: 'rgba(0,168,255,0.1)', color: COLORS.white }}>
                       JOIN
                     </button>
                   </div>

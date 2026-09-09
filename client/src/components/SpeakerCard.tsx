@@ -179,7 +179,7 @@ const SpeakerCard: React.FC<SpeakerCardProps> = ({
               style={{
                 fontFamily: FONTS.ui,
                 fontSize: 13,
-                color: COLORS.primaryBlue,
+                color: COLORS.white,
                 marginTop: 4,
                 fontWeight: 800,
                 letterSpacing: '0.1em',
