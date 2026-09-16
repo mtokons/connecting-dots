@@ -4,6 +4,7 @@ import { SocketProvider } from './contexts/SocketContext';
 import Home from './pages/Home';
 import Lobby from './pages/Lobby';
 import Studio from './pages/Studio';
+import StudioClassic from './pages/StudioClassic';
 import Settings from './pages/Settings';
 import AdminDashboard from './pages/AdminDashboard';
 import PostProduction from './pages/PostProduction';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
             <Route path="/episodes" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/studio/:roomId" element={<Studio />} />
+            <Route path="/studio-classic/:roomId" element={<StudioClassic />} />
             <Route path="/join/:episodeId" element={<GuestJoin />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin" element={<AdminDashboard />} />

@@ -10,7 +10,10 @@ interface UseRTMPStreamReturn {
   streamTargets: StreamTarget[];
   error: string | null;
   setTargets: (targets: StreamTarget[]) => void;
-  startStream: (canvasRef: React.RefObject<HTMLCanvasElement>) => Promise<void>;
+  startStream: (
+    canvasRef: React.RefObject<HTMLCanvasElement>,
+    audioStream?: MediaStream | null
+  ) => Promise<void>;
   stopStream: () => Promise<void>;
 }
 
@@ -45,7 +48,7 @@ const useRTMPStream = (): UseRTMPStreamReturn => {
   }, []);
 
   const startStream = useCallback(
-    async (canvasRef: React.RefObject<HTMLCanvasElement>) => {
+    async (canvasRef: React.RefObject<HTMLCanvasElement>, audioStream?: MediaStream | null) => {
       try {
         setError(null);
 
@@ -75,11 +78,17 @@ const useRTMPStream = (): UseRTMPStreamReturn => {
         // ── 3. Capture canvas video ────────────────────────────────────
         const videoStream = canvasRef.current.captureStream(30);
 
-        // ── 4. Get microphone audio ────────────────────────────────────
+        // ── 4. Get audio: prefer the caller-supplied mix (host mic + guests) ──
         let audioTrack: MediaStreamTrack | null = null;
+        const suppliedAudioTrack = audioStream?.getAudioTracks()[0] ?? null;
+        if (suppliedAudioTrack) {
+          audioTrack = suppliedAudioTrack;
+        }
         try {
-          const mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          audioTrack = mic.getAudioTracks()[0] ?? null;
+          if (!audioTrack) {
+            const mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            audioTrack = mic.getAudioTracks()[0] ?? null;
+          }
         } catch {
           try {
             const actx = new AudioContext({ sampleRate: 44100 });
