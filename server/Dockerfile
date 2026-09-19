@@ -31,7 +31,7 @@ ENV NODE_ENV=production \
 
 # FFmpeg is required by /api/stream RTMP relay.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg ca-certificates curl && \
+    apt-get install -y --no-install-recommends ffmpeg fonts-dejavu-core ca-certificates curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Non-root user — never run a public-facing Node process as root.
@@ -40,6 +40,7 @@ RUN groupadd -r app && useradd -r -g app -d /app app && \
 
 COPY --from=builder --chown=app:app /app/node_modules ./node_modules
 COPY --from=builder --chown=app:app /app/dist ./dist
+COPY --chown=app:app assets ./assets
 COPY --chown=app:app package*.json ./
 COPY --chown=app:app src/db.json ./src/db.json
 

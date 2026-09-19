@@ -1,15 +1,11 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { SocketProvider } from './contexts/SocketContext';
-import Home from './pages/Home';
-import Lobby from './pages/Lobby';
-import Studio from './pages/Studio';
-import StudioClassic from './pages/StudioClassic';
-import Settings from './pages/Settings';
-import AdminDashboard from './pages/AdminDashboard';
-import PostProduction from './pages/PostProduction';
-import Login from './pages/Login';
-import GuestJoin from './pages/GuestJoin';
+import ProductionHome from './pages/ProductionHome';
+const Studio = lazy(() => import('./pages/Studio'));
+const GuestJoin = lazy(() => import('./pages/GuestJoin'));
+const MobileUpload = lazy(() => import('./pages/MobileUpload'));
+const VideoEditor = lazy(() => import('./pages/VideoEditor'));
 
 const App: React.FC = () => {
   return (
@@ -23,17 +19,17 @@ const App: React.FC = () => {
     >
       <SocketProvider>
         <BrowserRouter>
+          <Suspense fallback={<main className="workflow"><div className="workflow-content" role="status">Loading...</div></main>}>
           <Routes>
-            <Route path="/" element={<Lobby />} />
-            <Route path="/episodes" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<ProductionHome />} />
             <Route path="/studio/:roomId" element={<Studio />} />
-            <Route path="/studio-classic/:roomId" element={<StudioClassic />} />
             <Route path="/join/:episodeId" element={<GuestJoin />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/post" element={<PostProduction />} />
+            <Route path="/post" element={<Navigate to="/edit" replace />} />
+            <Route path="/upload" element={<MobileUpload />} />
+            <Route path="/edit" element={<VideoEditor />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </SocketProvider>
     </div>

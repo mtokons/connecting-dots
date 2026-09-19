@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "test:video": "node --import tsx --test src/services/videoEditor.test.ts src/services/videoProjects.test.ts src/services/youtubeUpload.test.ts src/routes/videoProjects.test.ts src/routes/workspaceChannel.test.ts src/routes/stream.test.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {

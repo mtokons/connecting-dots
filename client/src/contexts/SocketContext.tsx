@@ -7,21 +7,22 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE } from '../utils/constants';
+import { workspaceToken } from '../lib/workspace';
 
 type MessageHandler = (data: any) => void;
 
 interface SocketContextValue {
   connected: boolean;
-  send: (data: object) => void;
-  sendBinary: (data: ArrayBuffer | Blob) => void;
+  send: (data: object) => boolean;
+  sendBinary: (data: ArrayBuffer | Blob) => boolean;
   on: (type: string, handler: MessageHandler) => () => void;
   joinRoom: (roomId: string) => void;
 }
 
 const SocketContext = createContext<SocketContextValue>({
   connected: false,
-  send: () => {},
-  sendBinary: () => {},
+  send: () => false,
+  sendBinary: () => false,
   on: () => () => {},
   joinRoom: () => {},
 });
@@ -47,6 +48,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     wsRef.current = ws;
 
     ws.onopen = () => {
+      if (wsRef.current !== ws) return;
+      ws.send(JSON.stringify({ type: 'stream:identify', token: workspaceToken() }));
       setConnected(true);
       console.log('🔌 WebSocket connected');
       // Re-join any rooms
@@ -69,6 +72,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     ws.onclose = () => {
+      if (wsRef.current !== ws) return;
       setConnected(false);
       wsRef.current = null;
       // Auto-reconnect after 2s
@@ -84,21 +88,29 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     connectWs();
     return () => {
       clearTimeout(reconnectTimer.current);
-      wsRef.current?.close();
+      const socket = wsRef.current;
       wsRef.current = null;
+      if (socket) {
+        socket.onclose = null;
+        socket.onerror = null;
+        socket.onopen = null;
+        socket.close();
+      }
     };
   }, [connectWs]);
 
   const send = useCallback((data: object) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(data));
+      try { wsRef.current.send(JSON.stringify(data)); return true; } catch { return false; }
     }
+    return false;
   }, []);
 
   const sendBinary = useCallback((data: ArrayBuffer | Blob) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(data);
-    }
+    const socket = wsRef.current;
+    const size = data instanceof Blob ? data.size : data.byteLength;
+    if (!socket || socket.readyState !== WebSocket.OPEN || socket.bufferedAmount + size > 8 * 1024 * 1024) return false;
+    try { socket.send(data); return true; } catch { return false; }
   }, []);
 
   const on = useCallback((type: string, handler: MessageHandler) => {

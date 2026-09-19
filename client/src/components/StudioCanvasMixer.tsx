@@ -1,15 +1,18 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { Overlay, MultiCameraLayout } from '../types';
 import { COLORS } from '../utils/constants';
+import type { ImageSegmenter } from '@mediapipe/tasks-vision';
+import { CameraFrame, createPersonSegmenter, type BackgroundStatus } from '../lib/studioCamera';
+import { containRect, DEFAULT_PROGRAM_STYLE, type ProgramStyle } from '../lib/studioMedia';
 
 type SpeakerStreamEntry = {
   id: string;
   label: string;
   stream: MediaStream | null;
   isLocal: boolean;
+  kind?: 'host' | 'camera' | 'guest' | 'screen' | 'clip';
+  media?: HTMLVideoElement;
 };
-
-const LOGO_STORAGE_KEY = 'connectingdot_logo';
 
 interface StudioCanvasMixerProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -21,6 +24,9 @@ interface StudioCanvasMixerProps {
   layout?: MultiCameraLayout;
   lowerThird?: { name: string; role: string; city: string; visible: boolean } | null;
   accentColor?: string;
+  backgroundUrl?: string;
+  programStyle?: ProgramStyle;
+  onBackgroundStatus?: (status: BackgroundStatus) => void;
 }
 
 function clamp(n: number, min: number, max: number) {
@@ -168,29 +174,61 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
   layout = 'grid',
   lowerThird,
   accentColor,
+  backgroundUrl,
+  programStyle = DEFAULT_PROGRAM_STYLE,
+  onBackgroundStatus,
 }) => {
   const resolvedAccent = accentColor || COLORS.primaryBlue;
-  const rafRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimeRef = useRef<number>(performance.now());
   const logoImageRef = useRef<HTMLImageElement | null>(null);
-  const logoDataUrl = useMemo(() => {
-    try {
-      return localStorage.getItem(LOGO_STORAGE_KEY);
-    } catch {
-      return null;
-    }
-  }, []);
+  const backgroundImageRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    backgroundImageRef.current = null;
+    if (!backgroundUrl) return;
+    const image = new Image();
+    image.src = backgroundUrl;
+    backgroundImageRef.current = image;
+    return () => { backgroundImageRef.current = null; };
+  }, [backgroundUrl]);
+  const logoDataUrl = '/sccg-logo.png';
 
   const videoElsRef = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const cameraFramesRef = useRef(new Map<string, CameraFrame>());
+  const segmenterRef = useRef<ImageSegmenter | null>(null);
+  const segmentCursorRef = useRef(0);
+  const segmentTimeRef = useRef(0);
+  const sceneRef = useRef('');
+  const transitionStartRef = useRef(0);
+  const previousFrameRef = useRef<HTMLCanvasElement | null>(null);
+  const logoCueRef = useRef(programStyle.logoCue);
+  const logoStartRef = useRef(performance.now());
+  const sharedBackground = programStyle.background === 'shared';
 
-  // Layout transition state
-  const prevLayoutRef = useRef<MultiCameraLayout>(layout);
-  const transitionRef = useRef<number>(1);
+  useEffect(() => {
+    if (!sharedBackground) { onBackgroundStatus?.('off'); return; }
+    let disposed = false;
+    let segmenter: ImageSegmenter | null = null;
+    cameraFramesRef.current.clear();
+    onBackgroundStatus?.('loading');
+    void createPersonSegmenter().then((created) => {
+      if (disposed) { created.close(); return; }
+      segmenter = created;
+      segmenterRef.current = created;
+      onBackgroundStatus?.('ready');
+    }).catch(() => { if (!disposed) onBackgroundStatus?.('unavailable'); });
+    return () => {
+      disposed = true;
+      if (segmenterRef.current === segmenter) segmenterRef.current = null;
+      segmenter?.close();
+    };
+  }, [sharedBackground, onBackgroundStatus]);
 
   useEffect(() => {
     // Keep a stable set of video elements per speaker id.
     const nextMap = new Map(videoElsRef.current);
     speakers.forEach((s) => {
+      if (s.media) { nextMap.set(s.id, s.media); return; }
       if (!nextMap.has(s.id)) {
         const video = document.createElement('video');
         video.muted = true;
@@ -202,7 +240,10 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
     // Remove stale ones
     Array.from(nextMap.keys()).forEach((id) => {
       if (!speakers.some((s) => s.id === id)) {
+        const video = nextMap.get(id);
+        if (video?.srcObject) { video.pause(); video.srcObject = null; }
         nextMap.delete(id);
+        cameraFramesRef.current.delete(id);
       }
     });
     videoElsRef.current = nextMap;
@@ -212,7 +253,7 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
     // Attach streams
     speakers.forEach((s) => {
       const v = videoElsRef.current.get(s.id);
-      if (!v) return;
+      if (!v || s.media) return;
       if (!s.stream) {
         if (v.srcObject) v.srcObject = null;
         return;
@@ -223,6 +264,12 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
       }
     });
   }, [speakers]);
+
+  useEffect(() => () => {
+    videoElsRef.current.forEach((video) => { if (video.srcObject) { video.pause(); video.srcObject = null; } });
+    videoElsRef.current.clear();
+    cameraFramesRef.current.clear();
+  }, []);
 
   useEffect(() => {
     if (!logoDataUrl) {
@@ -244,53 +291,59 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
       const now = performance.now();
       const t = (now - startTimeRef.current) / 1000;
 
-      // Handle layout transition
-      if (prevLayoutRef.current !== layout) {
-        transitionRef.current = 0;
-        prevLayoutRef.current = layout;
-      }
-      if (transitionRef.current < 1) {
-        transitionRef.current = Math.min(1, transitionRef.current + 0.04);
-      }
-
       const W = canvas.width || 1920;
       const H = canvas.height || 1080;
-
-      ctx.globalAlpha = transitionRef.current;
-
-      // Background (subtle animated gradient)
-      const g = ctx.createLinearGradient(0, 0, W, H);
-      g.addColorStop(0, '#050A15');
-      g.addColorStop(0.6, '#08162F');
-      g.addColorStop(1, '#050A15');
-      ctx.fillStyle = g;
+      const active = speakers.filter((speaker) => speaker.media || speaker.stream?.getVideoTracks().length);
+      const scene = `${layout}:${backgroundUrl}:${active.map((speaker) => speaker.id).join(',')}`;
+      if (sceneRef.current !== scene) {
+        if (sceneRef.current) {
+          const previous = previousFrameRef.current || document.createElement('canvas');
+          previous.width = W;
+          previous.height = H;
+          previous.getContext('2d')?.drawImage(canvas, 0, 0);
+          previousFrameRef.current = previous;
+          transitionStartRef.current = now;
+        }
+        sceneRef.current = scene;
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#12241f';
       ctx.fillRect(0, 0, W, H);
 
-      // Glow orbs
-      const orb1x = W * (0.25 + 0.02 * Math.sin(t * 0.7));
-      const orb1y = H * (0.2 + 0.03 * Math.cos(t * 0.9));
-      const orb2x = W * (0.75 + 0.02 * Math.cos(t * 0.6));
-      const orb2y = H * (0.7 + 0.03 * Math.sin(t * 0.8));
-      const orb = (x: number, y: number, r: number, color: string) => {
-        const rg = ctx.createRadialGradient(x, y, 0, x, y, r);
-        rg.addColorStop(0, color);
-        rg.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = rg;
-        ctx.fillRect(0, 0, W, H);
-      };
-      orb(orb1x, orb1y, Math.min(W, H) * 0.35, 'rgba(0,168,255,0.10)');
-      orb(orb2x, orb2y, Math.min(W, H) * 0.40, 'rgba(0,87,168,0.10)');
+      const backdrop = backgroundImageRef.current;
+      if (backdrop?.complete && backdrop.naturalWidth > 0) {
+        const crop = fitCover(backdrop.naturalWidth, backdrop.naturalHeight, W, H);
+        ctx.drawImage(backdrop, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
+      }
 
       const pad = 48;
       const gap = 28;
       const topPad = 120;
       const bottomPad = 160;
 
-      const active = speakers.filter((s) => s.stream);
       const count = Math.max(1, active.length);
 
       // Compute layout cells
       const cells = computeLayoutCells(layout, count, W, H, pad, topPad, bottomPad, gap);
+      const cameras = active.slice(0, cells.length).filter((speaker) => speaker.kind !== 'screen' && speaker.kind !== 'clip');
+      if (sharedBackground && segmenterRef.current && cameras.length && now - segmentTimeRef.current > 1000 / Math.min(30, cameras.length * 12)) {
+        segmentTimeRef.current = now;
+        const speaker = cameras[segmentCursorRef.current++ % cameras.length];
+        const video = videoElsRef.current.get(speaker.id);
+        if (video && video.readyState >= 2 && video.videoWidth && speaker.stream?.getVideoTracks().some((track) => track.enabled && track.readyState === 'live')) {
+          const frame = cameraFramesRef.current.get(speaker.id) || new CameraFrame();
+          cameraFramesRef.current.set(speaker.id, frame);
+          try {
+            segmenterRef.current.segmentForVideo(video, performance.now(), (result) => {
+              const mask = result.confidenceMasks?.[0];
+              if (mask) frame.updateMatte(mask);
+            });
+          } catch {
+            segmenterRef.current = null;
+            onBackgroundStatus?.('unavailable');
+          }
+        }
+      }
 
       // Draw speaker cards
       const drawSpeakerCard = (
@@ -299,29 +352,37 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
         isPip: boolean = false
       ) => {
         const { x, y, w: cellW, h: cellH } = cell;
-        const radius = isPip ? 22 : 28;
+        const radius = 8;
+        const presentation = s?.kind === 'screen' || s?.kind === 'clip';
+        const cutout = sharedBackground && !presentation;
 
         // Card background
         ctx.save();
         drawRoundedRect(ctx, x, y, cellW, cellH, radius);
-        ctx.fillStyle = 'rgba(255,255,255,0.04)';
-        ctx.fill();
+        ctx.fillStyle = presentation ? '#090d0c' : 'rgba(0,0,0,0.15)';
+        if (!cutout) ctx.fill();
         ctx.lineWidth = isPip ? 2 : 2;
         ctx.strokeStyle = isPip ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)';
-        ctx.stroke();
+        if (!cutout) ctx.stroke();
         ctx.clip();
 
-        // Video (cover)
-        if (s?.stream) {
+        if (s?.stream || s?.media) {
           const v = videoElsRef.current.get(s.id);
           const vw = v?.videoWidth ?? 0;
           const vh = v?.videoHeight ?? 0;
-          if (v && vw > 0 && vh > 0) {
-            const { sx, sy, sw, sh } = fitCover(vw, vh, cellW, cellH);
-            ctx.drawImage(v, sx, sy, sw, sh, x, y, cellW, cellH);
-          } else {
-            ctx.fillStyle = 'rgba(0,0,0,0.25)';
-            ctx.fillRect(x, y, cellW, cellH);
+          if (v && vw > 0 && vh > 0 && (s.media || s.stream?.getVideoTracks().some((track) => track.enabled && track.readyState === 'live'))) {
+            if (presentation) {
+              const fit = containRect(vw, vh, cellW, cellH);
+              ctx.drawImage(v, x + fit.x, y + fit.y, fit.width, fit.height);
+            } else {
+              const frame = cameraFramesRef.current.get(s.id) || new CameraFrame();
+              cameraFramesRef.current.set(s.id, frame);
+              const image = cutout && !segmenterRef.current ? null : frame.render(v, programStyle.grade, cutout, Math.max(cellW, cellH * vw / vh));
+              if (image) {
+                const { sx, sy, sw, sh } = fitCover(image.width, image.height, cellW, cellH);
+                ctx.drawImage(image, sx, sy, sw, sh, x, y, cellW, cellH);
+              }
+            }
           }
         } else {
           // Placeholder
@@ -332,34 +393,19 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
           ctx.fillRect(x, y, cellW, cellH);
         }
 
-        // Vignette
-        const vg = ctx.createRadialGradient(
-          x + cellW / 2, y + cellH / 2, 0,
-          x + cellW / 2, y + cellH / 2, Math.max(cellW, cellH)
-        );
-        vg.addColorStop(0, 'rgba(0,0,0,0)');
-        vg.addColorStop(1, 'rgba(0,0,0,0.35)');
-        ctx.fillStyle = vg;
-        ctx.fillRect(x, y, cellW, cellH);
-
-        // Label bar
+        if (presentation) { ctx.restore(); return; }
         const labelH = isPip ? 44 : 52;
+        const hasLowerThird = programStyle.lowerThird.visible || lowerThird?.visible;
+        if (hasLowerThird && x < pad + 720 && x + cellW > pad && y + cellH > H - 210 && y + cellH - labelH < H - 114) {
+          ctx.restore();
+          return;
+        }
         const fontSize = isPip ? 16 : 20;
         ctx.fillStyle = 'rgba(0,0,0,0.55)';
         ctx.fillRect(x, y + cellH - labelH, cellW, labelH);
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.font = `800 ${fontSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-        ctx.fillText(s?.label ?? 'Waiting for speakers…', x + 18, y + cellH - (isPip ? 16 : 20));
-
-        // Local badge
-        if (s?.isLocal) {
-          ctx.fillStyle = 'rgba(0,168,255,0.85)';
-          drawRoundedRect(ctx, x + 18, y + 18, 78, 30, 12);
-          ctx.fill();
-          ctx.fillStyle = '#001529';
-          ctx.font = '900 12px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-          ctx.fillText('LOCAL', x + 38, y + 38);
-        }
+        ctx.fillText(s?.label ?? 'Waiting for speakers', x + 18, y + cellH - (isPip ? 16 : 20), cellW - 36);
 
         ctx.restore();
       };
@@ -379,21 +425,43 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
       }
 
       // ── Top header line ──────────────────────────────────
-      ctx.fillStyle = 'rgba(255,255,255,0.06)';
-      drawRoundedRect(ctx, pad, 40, W - pad * 2, 56, 18);
+      ctx.fillStyle = 'rgba(0,0,0,0.64)';
+      drawRoundedRect(ctx, pad, 32, W - pad * 2, 72, 8);
       ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.10)';
       ctx.lineWidth = 1;
       ctx.stroke();
+
+      // Logo watermark (top-left, inside header)
+      let titleX = pad + 22;
+      const logo = logoImageRef.current;
+      if (logo && logo.complete && logo.naturalWidth > 0) {
+        const maxH = 56;
+        const scale = maxH / logo.naturalHeight;
+        const lw = logo.naturalWidth * scale;
+        const lh = logo.naturalHeight * scale;
+        if (logoCueRef.current !== programStyle.logoCue) { logoCueRef.current = programStyle.logoCue; logoStartRef.current = now; }
+        const logoTime = (now - logoStartRef.current) / 1000;
+        const reveal = programStyle.animateLogo ? Math.min(1, logoTime / 0.6) : 1;
+        ctx.save();
+        ctx.globalAlpha = reveal;
+        ctx.drawImage(logo, pad + 14, 68 - lh / 2 + (1 - reveal) * 12, lw, lh);
+        if (programStyle.animateLogo && logoTime % 12 < 1.2) {
+          ctx.beginPath(); ctx.rect(pad + 14, 68 - lh / 2, lw, lh); ctx.clip();
+          const sweep = (logoTime % 12) / 1.2;
+          ctx.translate(pad + 14 + (lw + 50) * sweep - 50, 68 - lh / 2);
+          ctx.transform(1, 0, -0.35, 1, 0, 0);
+          ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(0, 0, 28, lh);
+        }
+        ctx.restore();
+        titleX = pad + 14 + lw + 18;
+      }
+
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.font = '900 22px Outfit, Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-      ctx.fillText(showName.toUpperCase(), pad + 22, 76);
+      ctx.font = '900 20px Outfit, Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+      ctx.fillText(showName.toUpperCase(), titleX, 76, W - pad - titleX - 180);
 
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.font = '900 12px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-      ctx.fillText(`EP ${episodeNumber.toString().padStart(2, '0')} • CONNECTING DOT`, W - pad - 260, 76);
-
-      // LIVE/OFF AIR indicator
+      if (isLive) {
       const pillW = 140;
       const pillX = W - pad - pillW;
       const pillY = 40;
@@ -409,17 +477,6 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
       ctx.arc(pillX + 32, 68, 6, 0, Math.PI * 2);
       ctx.fillStyle = isLive ? '#fff' : 'rgba(255,255,255,0.25)';
       ctx.fill();
-
-      // Logo watermark (top-left, inside header)
-      const logo = logoImageRef.current;
-      if (logo && logo.complete && logo.naturalWidth > 0) {
-        const maxH = 36;
-        const scale = maxH / logo.naturalHeight;
-        const lw = logo.naturalWidth * scale;
-        const lh = logo.naturalHeight * scale;
-        ctx.globalAlpha = 0.95;
-        ctx.drawImage(logo, pad + 22, 52 - lh / 2 + 18, lw, lh);
-        ctx.globalAlpha = 1;
       }
 
       // ── Overlays ─────────────────────────────────────────
@@ -437,7 +494,9 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
         ctx.shadowOffsetY = 0;
       });
 
-      const ticker = overlays.find((o) => o.visible && o.type === 'ticker');
+      const ticker = programStyle.ticker.visible && programStyle.ticker.text.trim()
+        ? { content: programStyle.ticker.text, fontSize: 24, color: '#ffffff' }
+        : overlays.find((o) => o.visible && o.type === 'ticker');
       if (ticker) {
         const barH = 56;
         const ty = H - 88;
@@ -547,7 +606,8 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
       }
 
       // Lower third
-      if (lowerThird?.visible) {
+      const activeLowerThird = programStyle.lowerThird.visible ? programStyle.lowerThird : lowerThird;
+      if (activeLowerThird?.visible) {
         const boxW = 720;
         const boxH = 96;
         const lx = pad;
@@ -564,22 +624,32 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
 
         ctx.fillStyle = 'rgba(255,255,255,0.92)';
         ctx.font = '900 26px Outfit, Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-        ctx.fillText(lowerThird.name, lx + 46, ly + 52);
+        ctx.fillText(activeLowerThird.name, lx + 46, ly + 52, boxW - 70);
 
         ctx.fillStyle = 'rgba(255,255,255,0.60)';
         ctx.font = '800 14px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-        ctx.fillText(`${lowerThird.role.toUpperCase()} • ${lowerThird.city}`, lx + 46, ly + 78);
+        ctx.fillText([activeLowerThird.role, activeLowerThird.city].filter(Boolean).join(' / '), lx + 46, ly + 78, boxW - 70);
       }
 
-      rafRef.current = requestAnimationFrame(draw);
+      const progress = clamp((now - transitionStartRef.current) / 450, 0, 1);
+      if (previousFrameRef.current && progress < 1 && programStyle.transition !== 'cut') {
+        const eased = progress * progress * (3 - 2 * progress);
+        ctx.save();
+        if (programStyle.transition === 'dissolve') ctx.globalAlpha = 1 - eased;
+        else { ctx.beginPath(); ctx.rect(W * eased, 0, W * (1 - eased), H); ctx.clip(); }
+        ctx.drawImage(previousFrameRef.current, 0, 0);
+        ctx.restore();
+        if (programStyle.transition === 'wipe') { ctx.fillStyle = resolvedAccent; ctx.fillRect(W * eased - 8, 0, 16, H); }
+      }
+      timerRef.current = setTimeout(draw, Math.max(0, 1000 / 30 - (performance.now() - now)));
     };
 
-    rafRef.current = requestAnimationFrame(draw);
+    draw();
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = null;
     };
-  }, [canvasRef, speakers, overlays, showName, episodeNumber, isLive, lowerThird, layout]);
+  }, [canvasRef, speakers, overlays, showName, episodeNumber, isLive, lowerThird, layout, backgroundUrl, resolvedAccent, programStyle, sharedBackground, onBackgroundStatus]);
 
   return null;
 };

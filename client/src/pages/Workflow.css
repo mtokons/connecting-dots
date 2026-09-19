@@ -1,0 +1,58 @@
+.workflow { --ink: #17231e; --muted: #637169; --line: #d4ded7; --green: #22654d; min-height: 100vh; background: #f6f8f6; color: var(--ink); font-family: 'DM Sans', sans-serif; letter-spacing: 0; }
+.workflow * { box-sizing: border-box; }
+.workflow button, .workflow input { font: inherit; letter-spacing: 0; }
+.workflow a { color: inherit; text-decoration: none; }
+.workflow-header { min-height: 82px; padding: 20px 5%; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); background: #fff; }
+.workflow-brand { font: 700 23px 'Outfit', sans-serif; display: flex; align-items: center; gap: 11px; }
+.workflow-brand svg { color: var(--green); }
+.workspace-link { display: inline-flex; gap: 10px; align-items: center; font-size: 14px; }
+.workflow-content { max-width: 1220px; margin: auto; padding: 42px 32px 56px; }
+.workflow-title { margin-bottom: 26px; }
+.workflow-kicker { color: var(--muted); font-size: 11px; font-weight: 700; }
+.workflow h1 { font: 600 34px/1.15 'Outfit', sans-serif; margin: 10px 0 0; letter-spacing: 0; }
+.workflow h2 { font: 600 22px 'Outfit', sans-serif; margin: 0; letter-spacing: 0; }
+.workflow-entries { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.workflow-entry { border: 1px solid var(--line); border-radius: 8px; display: flex; gap: 18px; align-items: center; padding: 24px; text-align: left; min-height: 112px; background: #fff; cursor: pointer; color: var(--ink); transition: border-color .15s, background .15s; }
+.workflow-entry.selected { border: 2px solid var(--green); padding: 23px; background: #edf6f0; }
+.workflow-entry.live-entry.selected { border-color: #b74445; background: #fff1f0; }
+.entry-icon { color: var(--green); width: 46px; height: 46px; display: grid; place-items: center; flex: 0 0 46px; background: #e4efe7; border-radius: 6px; }
+.live-entry .entry-icon { color: #ac3c40; background: #f8e8e8; }
+.workflow-entry strong { display: block; font-size: 19px; font-weight: 700; }
+.workflow-entry small { display: block; margin-top: 7px; font-size: 13px; color: var(--muted); }
+.entry-check { margin-left: auto; width: 22px; flex: 0 0 22px; color: var(--green); }
+.workflow-studios { margin-top: 38px; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.section-heading > span { font-size: 12px; color: var(--muted); }
+.studio-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; }
+.studio-choice { text-align: left; border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 0; overflow: hidden; color: var(--ink); cursor: pointer; min-width: 0; }
+.studio-choice.selected { outline: 2px solid var(--green); outline-offset: 3px; }
+.studio-photo { position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden; }
+.studio-photo img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.studio-check { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; background: #fff; color: var(--green); }
+.studio-caption { display: flex; padding: 16px 14px; flex-direction: column; gap: 4px; }
+.studio-caption strong { font: 600 18px 'Outfit', sans-serif; }
+.studio-caption small { font-size: 12px; color: var(--muted); }
+.workflow-continue { margin-top: 34px; border-top: 1px solid var(--line); padding-top: 25px; display: flex; align-items: center; gap: 24px; justify-content: space-between; }
+.file-formats { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+.separator { margin: 0 7px; color: #a3afa7; }
+.continue-button { display: flex; align-items: center; justify-content: center; gap: 18px; border: 0; border-radius: 6px; background: var(--green); color: #fff; min-height: 50px; padding: 13px 24px; font-weight: 700 !important; cursor: pointer; }
+.workflow-continue label { display: grid; gap: 7px; font-size: 12px; width: min(100%,400px); }
+.workflow input { padding: 11px 12px; border: 1px solid #b7c5bb; border-radius: 5px; background: #fff; width: 100%; color: var(--ink); }
+.workflow :focus-visible { outline: 3px solid #27805e; outline-offset: 5px; }
+.workflow-error { color: #ac3c40; }
+.live-setup-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(250px, 1fr); gap: 34px; align-items: start; }
+.live-camera-preview { aspect-ratio: 16 / 9; background-size: cover; background-position: center; padding: 24px; position: relative; }
+.live-camera-preview video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.preview-studio-label { position: absolute; bottom: 10px; left: 12px; background: #17231ee8; color: #fff; padding: 6px 10px; font-size: 12px; }
+.camera-unavailable { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; color: #fff; background: #111a; font-size: 13px; }
+.live-setup-fields { display: grid; gap: 22px; }
+.live-setup label { display: grid; gap: 8px; font-size: 13px; }
+.live-device-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 20px; }
+.live-setup select { width: 100%; min-width: 0; border: 1px solid #b7c5bb; background: #fff; padding: 12px; border-radius: 5px; color: var(--ink); font: inherit; }
+.live-setup button:disabled { opacity: .5; cursor: not-allowed; }
+.live-studio-shell button, .live-studio-shell select, .live-studio-shell input { max-width: 100%; }
+.live-studio-shell header { flex-wrap: wrap; }
+@media(max-width:800px) { .live-setup-grid { grid-template-columns: 1fr; } .live-studio-shell { height: auto !important; min-height: 100vh; overflow: visible !important; } .live-studio-body { flex-direction: column; overflow: visible !important; } .live-studio-body > aside { width: 100% !important; min-width: 0 !important; } .live-studio-body > main { flex: none !important; } }
+@media(prefers-reduced-motion:no-preference) { .workflow-studios { animation: studio-reveal .35s ease-out; } @keyframes studio-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } } }
+@media(max-width:850px) { .studio-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .workflow-entry { padding: 18px; gap: 12px; } .workflow-entry.selected { padding: 17px; } .workflow-entry strong { font-size: 17px; } }
+@media(max-width:560px) { .workflow-header { padding: 18px; flex-wrap: wrap; min-height: 76px; gap: 12px; } .workflow-brand { font-size: 21px; } .workspace-link { font-size: 12px; } .workflow-content { padding: 30px 20px; } .workflow h1 { font-size: 28px; } .workflow-entries { grid-template-columns: 1fr; gap: 12px; } .workflow-entry { min-height: 94px; } .section-heading > span { display: none; } .studio-grid { gap: 14px; } .studio-caption { padding: 13px 10px; } .workflow-continue { align-items: stretch; flex-direction: column; gap: 18px; } .continue-button { width: 100%; } }

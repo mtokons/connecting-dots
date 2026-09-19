@@ -1,0 +1,54 @@
+.video-workspace { --editor-bg: #111315; --editor-line: #343a40; --editor-accent: #62d6b0; min-height: 100vh; color: #f1f4f5; background: var(--editor-bg); font-family: 'DM Sans', sans-serif; letter-spacing: 0; }
+.video-workspace * { box-sizing: border-box; }
+.video-workspace a { color: #78c9f3; }
+.video-workspace h1, .video-workspace h2, .video-workspace h3 { font-family: 'Outfit', sans-serif; letter-spacing: 0; margin: 0; }
+.video-workspace h1 { font-size: 24px; }
+.video-workspace h2 { font-size: 19px; }
+.video-workspace h3 { font-size: 15px; }
+.video-header { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 18px 24px; border-bottom: 1px solid var(--editor-line); }
+.video-header > a:first-child { font-family: 'Outfit', sans-serif; font-size: 21px; font-weight: 700; text-decoration: none; color: #fff; }
+.video-header nav { margin-left: auto; display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; }
+.video-workspace button, .video-workspace input, .video-workspace select, .video-workspace textarea { font: inherit; font-size: 14px; color: inherit; }
+.video-workspace button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 12px; border: 1px solid #46505a; border-radius: 6px; background: #23292e; cursor: pointer; }
+.video-workspace button:hover:not(:disabled) { background: #344049; }
+.video-workspace button:disabled { opacity: .45; cursor: not-allowed; }
+.video-workspace button.primary { color: #091a14; background: var(--editor-accent); border-color: var(--editor-accent); font-weight: 700; }
+.video-workspace button.danger { color: #ffabab; }
+.video-workspace button.icon { width: 40px; flex: 0 0 40px; padding: 8px; }
+.video-workspace button[aria-pressed='true'] { border-color: var(--editor-accent); color: var(--editor-accent); }
+.video-workspace :focus-visible { outline: 2px solid #78c9f3; outline-offset: 3px; }
+.video-workspace label { display: grid; gap: 7px; font-size: 13px; min-width: 0; }
+.video-workspace input:not([type='checkbox']), .video-workspace select, .video-workspace textarea { width: 100%; min-width: 0; padding: 10px; background: #1a1e22; border: 1px solid #46505a; border-radius: 4px; }
+.video-workspace input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--editor-accent); }
+.video-workspace input[type='range'] { padding: 0; accent-color: var(--editor-accent); }
+.video-workspace input[type='file'] { padding: 14px 10px; }
+.video-workspace fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.video-workspace textarea { resize: vertical; min-height: 90px; }
+.video-workspace progress { width: 100%; height: 10px; accent-color: var(--editor-accent); }
+.video-layout { display: grid; grid-template-columns: 245px minmax(0, 1fr) 300px; min-height: calc(100vh - 77px); }
+.video-sidebar { padding: 22px 18px; border-right: 1px solid var(--editor-line); display: flex; flex-direction: column; gap: 18px; }
+.video-settings { padding: 22px 18px; border-left: 1px solid var(--editor-line); display: flex; flex-direction: column; gap: 24px; }
+.video-project-list { display: grid; gap: 8px; }
+.video-project-list button { justify-content: flex-start; text-align: left; overflow-wrap: anywhere; }
+.video-main { min-width: 0; padding: 24px; display: flex; flex-direction: column; gap: 22px; }
+.video-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.video-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; }
+.video-monitor { background: #08090a; min-height: 240px; height: min(54vh, 560px); display: grid; place-items: center; overflow: hidden; border: 1px solid var(--editor-line); }
+.video-monitor video { display: block; width: 100%; height: 100%; max-height: min(54vh, 560px); object-fit: contain; }
+.video-monitor-empty { display: grid; justify-items: center; gap: 18px; color: #a5aeb6; padding: 28px; text-align: center; background-image: linear-gradient(#ffffff04 1px, transparent 1px), linear-gradient(90deg, #ffffff04 1px, transparent 1px); background-size: 28px 28px; width: 100%; height: 100%; }
+.video-section { display: grid; gap: 14px; padding-top: 18px; border-top: 1px solid var(--editor-line); }
+.video-segment { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px; gap: 10px; align-items: end; }
+.video-overlay { display: grid; gap: 12px; border-bottom: 1px solid var(--editor-line); padding-bottom: 14px; }
+.video-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.video-muted { color: #aeb8c1; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.video-error { color: #ffb3ae; background: #381e20; padding: 12px; border-left: 3px solid #f37f77; overflow-wrap: anywhere; }
+.video-success { color: #81e8bf; display: flex; align-items: center; gap: 10px; }
+.video-check { display: flex !important; align-items: center; gap: 10px !important; }
+.video-transfer { display: grid; gap: 16px; min-width: 0; }
+.transfer-content { max-width: 560px; padding: 48px 24px; margin: auto; display: grid; gap: 24px; }
+.video-workspace dialog { max-width: min(480px, calc(100% - 28px)); width: 480px; max-height: 90vh; overflow: auto; border: 1px solid #46505a; border-radius: 8px; padding: 24px; color: #f1f4f5; background: #181d21; }
+.video-workspace dialog::backdrop { background: #000b; }
+.video-qr { display: grid; justify-items: center; gap: 18px; margin-top: 20px; }
+.video-qr svg { max-width: 100%; height: auto; }
+@media (max-width: 1150px) { .video-layout { grid-template-columns: 205px minmax(0, 1fr); } .video-settings { grid-column: 2; border-left: 0; border-top: 1px solid var(--editor-line); } .video-sidebar { grid-row: span 2; } }
+@media (max-width: 700px) { .video-header { padding: 16px; gap: 12px; } .video-layout { display: flex; flex-direction: column; } .video-sidebar { border-right: 0; border-bottom: 1px solid var(--editor-line); padding: 16px; } .video-project-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } .video-main, .video-settings { padding: 18px 16px; } .video-monitor { height: 310px; min-height: 220px; } .video-monitor video { max-height: 310px; } .video-header nav { margin-left: 0; } }

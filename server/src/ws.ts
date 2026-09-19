@@ -19,6 +19,7 @@ import { db } from './db';
 // ─── Types ───────────────────────────────────────────────────
 
 interface WsClient {
+  workspace?: string;
   ws: WebSocket;
   id: string;
   rooms: Set<string>;
@@ -37,7 +38,7 @@ let binaryHandler: BinaryHandler | null = null;
 let wss: WebSocketServer;
 
 export function initWs(server: HttpServer, allowedOrigins: string[]) {
-  wss = new WebSocketServer({ server, path: '/ws' });
+  wss = new WebSocketServer({ server, path: '/ws', maxPayload: 8 * 1024 * 1024 });
 
   wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
     // Origin check
@@ -72,6 +73,7 @@ export function initWs(server: HttpServer, allowedOrigins: string[]) {
     ws.on('pong', () => { client.alive = true; });
 
     ws.on('close', () => {
+      handlers.get('stream:disconnect')?.(client, {});
       clients.delete(client.id);
       console.log(`🔌 WS disconnected: ${client.id}`);
     });

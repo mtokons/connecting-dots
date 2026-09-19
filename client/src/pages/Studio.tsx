@@ -9,16 +9,16 @@ import useRTMPStream from '../hooks/useRTMPStream';
 import useRecording from '../hooks/useRecording';
 import StudioCanvasMixer from '../components/StudioCanvasMixer';
 import LogoWatermark from '../components/LogoWatermark';
+import LiveSetup from '../components/LiveSetup';
+import { findStudio, StudioPreset, workspaceHeaders } from '../lib/workspace';
+import StudioDesk, { type DeskSource, type SavedDestinations } from '../components/StudioDesk';
+import usePresentationMedia from '../hooks/usePresentationMedia';
+import { DEFAULT_PROGRAM_STYLE, type BroadcastQuality, type ProgramStyle } from '../lib/studioMedia';
+import type { BackgroundStatus } from '../lib/studioCamera';
 
 type Phase = 'setup' | 'studio';
 
-interface SourceEntry {
-  id: string;
-  label: string;
-  stream: MediaStream | null;
-  isLocal: boolean;
-  kind: 'host' | 'camera' | 'guest';
-}
+type SourceEntry = DeskSource;
 
 const LAYOUTS: { value: MultiCameraLayout; label: string }[] = [
   { value: 'grid', label: 'Grid' },
@@ -40,56 +40,91 @@ const Studio: React.FC = () => {
 
   // ── Role detection (guests arrive from the /join link) ─────────────
   const initialGuestName = typeof window !== 'undefined' ? sessionStorage.getItem('guestName') : null;
-  const isGuest = (typeof window !== 'undefined' ? sessionStorage.getItem('guestRole') : null) === 'guest';
+  const isGuest = new URLSearchParams(window.location.search).get('guest') === '1' || (typeof window !== 'undefined' ? sessionStorage.getItem('guestRole') : null) === 'guest';
 
   // ── Core state ─────────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>('setup');
-  const [name, setName] = useState(initialGuestName ?? '');
-  const [showName] = useState('Connecting Dot Podcast');
-  const [layout, setLayout] = useState<MultiCameraLayout>('grid');
+  const [name, setName] = useState(initialGuestName ?? 'Host');
+  const [showName] = useState(() => new URLSearchParams(window.location.search).get('title')?.slice(0, 80) || 'Connecting Dot Live');
+  const [studio, setStudio] = useState<StudioPreset>(() => findStudio(new URLSearchParams(window.location.search).get('studio')).id);
+  const [layout, setLayout] = useState<MultiCameraLayout>(() => findStudio(new URLSearchParams(window.location.search).get('studio')).layout);
   const [featuredId, setFeaturedId] = useState<string | null>(null);
-  const [recordEnabled, setRecordEnabled] = useState(true);
+  const [recordEnabled, setRecordEnabled] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [programStyle, setProgramStyle] = useState<ProgramStyle>(() => ({ ...DEFAULT_PROGRAM_STYLE, grade: { ...DEFAULT_PROGRAM_STYLE.grade }, lowerThird: { ...DEFAULT_PROGRAM_STYLE.lowerThird }, ticker: { ...DEFAULT_PROGRAM_STYLE.ticker } }));
+  const [backgroundStatus, setBackgroundStatus] = useState<BackgroundStatus>('loading');
+  const [quality, setQuality] = useState<BroadcastQuality>('1080p');
+  const [savedDestinations, setSavedDestinations] = useState<SavedDestinations | null>(null);
 
   // Host local media (feeds the program canvas + audio mix)
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [mediaLoading, setMediaLoading] = useState(true);
+  const activeLocalStream = useRef<MediaStream | null>(null);
+  activeLocalStream.current = localStream;
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedVideo, setSelectedVideo] = useState('');
   const [selectedAudio, setSelectedAudio] = useState('');
   const [audioLevel, setAudioLevel] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
   const previewRef = useRef<HTMLVideoElement>(null);
 
-  // Streaming destinations
-  const [youtube, setYoutube] = useState({ key: '', enabled: false });
+  const [youtube, setYoutube] = useState({ key: '', enabled: true });
   const [facebook, setFacebook] = useState({ key: '', enabled: false });
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem('cd_stream_yt_key');
+      localStorage.removeItem('cd_stream_fb_key');
+    } catch {}
+  }, []);
+
+  const handleYoutubeKey = (key: string) => {
+    setYoutube((p) => ({ ...p, key, enabled: key.trim().length > 0 || p.enabled }));
+  };
+
+  const handleFacebookKey = (key: string) => {
+    setFacebook((p) => ({ ...p, key, enabled: key.trim().length > 0 || p.enabled }));
+  };
 
   // ── Hooks ──────────────────────────────────────────────────────────
   const {
+    room,
     connect,
     disconnect,
     remoteParticipants,
     isConnecting,
-    isMuted,
-    isCameraOff,
-    toggleMute,
-    toggleCamera,
+    toggleMute: toggleRoomMute,
+    toggleCamera: toggleRoomCamera,
   } = useStudioRoom();
   const multiCam = useMultiCamera();
-  const { isStreaming, streamDuration, setTargets, startStream, stopStream, error: streamError } =
-    useRTMPStream();
+  const broadcast = useRTMPStream();
+  const { isStreaming, streamDuration, setTargets, startStream, stopStream, error: streamError } = broadcast;
+  const presentation = usePresentationMedia(room, setToast);
   const { isRecording, startRecording, stopRecording } = useRecording(canvasRef);
+
+  useEffect(() => {
+    if (isGuest) return;
+    const controller = new AbortController();
+    void fetch(`${API_BASE}/api/stream/destinations`, { headers: workspaceHeaders(), signal: controller.signal }).then(async (response) => {
+      if (!response.ok) throw new Error('Saved publishing destinations are unavailable. Check the API connection.');
+      setSavedDestinations(await response.json());
+    }).catch((error) => { if (!controller.signal.aborted) setToast(error.message); });
+    return () => controller.abort();
+  }, [isGuest]);
 
   // ── Setup local camera/mic preview ─────────────────────────────────
   useEffect(() => {
     if (phase !== 'setup') return;
+    setMediaLoading(true);
     let disposed = false;
     let audioCtx: AudioContext | null = null;
 
     (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: selectedVideo ? { deviceId: { exact: selectedVideo } } : true,
-          audio: selectedAudio ? { deviceId: { exact: selectedAudio } } : true,
+          video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 }, ...(selectedVideo ? { deviceId: { exact: selectedVideo } } : {}) },
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, ...(selectedAudio ? { deviceId: { exact: selectedAudio } } : {}) },
         });
         if (disposed) {
           stream.getTracks().forEach((t) => t.stop());
@@ -118,6 +153,8 @@ const Studio: React.FC = () => {
         if (!disposed) setDevices(all);
       } catch {
         if (!disposed) setToast('Unable to access camera/microphone. Check browser permissions.');
+      } finally {
+        if (!disposed) setMediaLoading(false);
       }
     })();
 
@@ -138,12 +175,28 @@ const Studio: React.FC = () => {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const audioDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
   const audioSrcMapRef = useRef<Map<string, MediaStreamAudioSourceNode>>(new Map());
+  const voiceInputRef = useRef<BiquadFilterNode | null>(null);
+  const voiceGainRef = useRef<GainNode | null>(null);
+  const referenceAudioRef = useRef<{ video: HTMLVideoElement; source: MediaElementAudioSourceNode; gain: GainNode } | null>(null);
 
   const ensureAudioMix = useCallback(() => {
     if (!audioCtxRef.current) {
-      const ctx = new AudioContext();
+      const ctx = new AudioContext({ sampleRate: 48000 });
       audioCtxRef.current = ctx;
       audioDestRef.current = ctx.createMediaStreamDestination();
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 80;
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -20;
+      compressor.knee.value = 20;
+      compressor.ratio.value = 3;
+      compressor.attack.value = 0.005;
+      compressor.release.value = 0.18;
+      const gain = ctx.createGain();
+      filter.connect(compressor).connect(gain).connect(audioDestRef.current);
+      voiceInputRef.current = filter;
+      voiceGainRef.current = gain;
     }
     return { ctx: audioCtxRef.current, dest: audioDestRef.current! };
   }, []);
@@ -157,13 +210,18 @@ const Studio: React.FC = () => {
     remoteParticipants.forEach((p) => {
       const track = p.getTrackPublication(Track.Source.Microphone)?.audioTrack?.mediaStreamTrack;
       if (track) wanted.set(`guest-${p.identity}`, track);
+      const screenAudio = p.getTrackPublication(Track.Source.ScreenShareAudio)?.audioTrack?.mediaStreamTrack;
+      if (screenAudio && featuredId === `screen-${p.identity}`) wanted.set(`screen-${p.identity}`, screenAudio);
     });
+    if (featuredId === 'screen') presentation.screen?.getAudioTracks().forEach((track) => wanted.set(`screen-${track.id}`, track));
 
     wanted.forEach((track, key) => {
+      const previous = audioSrcMapRef.current.get(key);
+      if (previous && previous.mediaStream.getAudioTracks()[0]?.id !== track.id) { previous.disconnect(); audioSrcMapRef.current.delete(key); }
       if (!audioSrcMapRef.current.has(key)) {
         try {
           const node = ctx.createMediaStreamSource(new MediaStream([track]));
-          node.connect(dest);
+          node.connect(key.startsWith('screen-') ? dest : voiceInputRef.current || dest);
           audioSrcMapRef.current.set(key, node);
         } catch {
           /* track already connected elsewhere */
@@ -180,12 +238,35 @@ const Studio: React.FC = () => {
         audioSrcMapRef.current.delete(key);
       }
     });
-  }, [phase, localStream, remoteParticipants, ensureAudioMix]);
+  }, [phase, localStream, remoteParticipants, ensureAudioMix, presentation.screen, featuredId]);
+
+  useEffect(() => {
+    if (phase !== 'studio') return;
+    const { ctx, dest } = ensureAudioMix();
+    const video = presentation.clip?.video;
+    if (referenceAudioRef.current?.video !== video) {
+      referenceAudioRef.current?.source.disconnect();
+      referenceAudioRef.current?.gain.disconnect();
+      referenceAudioRef.current = null;
+      if (video) {
+        const source = ctx.createMediaElementSource(video);
+        const gain = ctx.createGain();
+        gain.gain.value = 0;
+        source.connect(gain);
+        gain.connect(dest);
+        gain.connect(ctx.destination);
+        referenceAudioRef.current = { video, source, gain };
+      }
+    }
+    const onAir = featuredId === 'reference';
+    referenceAudioRef.current?.gain.gain.setTargetAtTime(onAir ? presentation.volume : 0, ctx.currentTime, 0.06);
+    voiceGainRef.current?.gain.setTargetAtTime(onAir && presentation.playing ? 0.55 : 1, ctx.currentTime, 0.12);
+  }, [phase, presentation.clip, presentation.volume, presentation.playing, featuredId, ensureAudioMix]);
 
   useEffect(() => {
     return () => {
       audioCtxRef.current?.close().catch(() => {});
-      localStream?.getTracks().forEach((t) => t.stop());
+      activeLocalStream.current?.getTracks().forEach((track) => track.stop());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -196,34 +277,38 @@ const Studio: React.FC = () => {
       {
         platform: 'youtube',
         rtmpKey: youtube.key.trim(),
-        enabled: youtube.enabled && youtube.key.trim().length > 0,
+        enabled: youtube.enabled && (youtube.key.trim().length > 0 || Boolean(savedDestinations?.youtube)),
         isConnected: false,
       },
       {
         platform: 'facebook',
         rtmpKey: facebook.key.trim(),
-        enabled: facebook.enabled && facebook.key.trim().length > 0,
+        enabled: facebook.enabled && (facebook.key.trim().length > 0 || Boolean(savedDestinations?.facebook)),
         isConnected: false,
       },
     ];
     setTargets(targets);
-  }, [youtube, facebook, setTargets]);
+  }, [youtube, facebook, savedDestinations, setTargets]);
 
   // ── Build the unified list of program sources ──────────────────────
   const remoteSources = useMemo<SourceEntry[]>(() => {
-    return remoteParticipants.map((p) => {
-      const cam = p.getTrackPublication(Track.Source.Camera)?.videoTrack?.mediaStreamTrack;
+    return remoteParticipants.flatMap((p) => {
+      const publication = p.getTrackPublication(Track.Source.Camera);
+      const cam = publication?.isMuted ? undefined : publication?.videoTrack?.mediaStreamTrack;
       const mic = p.getTrackPublication(Track.Source.Microphone)?.audioTrack?.mediaStreamTrack;
       const stream = new MediaStream();
       if (cam) stream.addTrack(cam);
       if (mic) stream.addTrack(mic);
-      return {
+      const participantSources: SourceEntry[] = [{
         id: p.identity,
         label: p.name || p.identity,
         stream: stream.getTracks().length ? stream : null,
         isLocal: false,
         kind: 'guest' as const,
-      };
+      }];
+      const screen = p.getTrackPublication(Track.Source.ScreenShare)?.videoTrack?.mediaStreamTrack;
+      if (screen) participantSources.push({ id: `screen-${p.identity}`, label: `${p.name || p.identity} presentation`, stream: new MediaStream([screen]), isLocal: false, kind: 'screen' });
+      return participantSources;
     });
   }, [remoteParticipants]);
 
@@ -232,7 +317,7 @@ const Studio: React.FC = () => {
     if (localStream) {
       list.push({
         id: 'host',
-        label: `${name || 'Host'} (You)`,
+        label: name || 'Host',
         stream: localStream,
         isLocal: true,
         kind: 'host',
@@ -244,6 +329,8 @@ const Studio: React.FC = () => {
         list.push({ id: c.id, label: c.label, stream: c.stream, isLocal: false, kind: 'camera' })
       );
     list.push(...remoteSources);
+    if (presentation.screen) list.push({ id: 'screen', label: 'Screen share', stream: presentation.screen, isLocal: true, kind: 'screen' });
+    if (presentation.clip) list.push({ id: 'reference', label: presentation.clip.name, stream: null, media: presentation.clip.video, isLocal: true, kind: 'clip' });
 
     // Featured source goes first (used by spotlight / PiP layouts).
     if (featuredId) {
@@ -254,30 +341,31 @@ const Studio: React.FC = () => {
       }
     }
     return list;
-  }, [localStream, name, multiCam.cameras, remoteSources, featuredId]);
+  }, [localStream, name, multiCam.cameras, remoteSources, featuredId, presentation.screen, presentation.clip]);
 
-  const mixerSpeakers = useMemo(
-    () => sources.map((s) => ({ id: s.id, label: s.label, stream: s.stream, isLocal: s.isLocal })),
-    [sources]
-  );
+  const mixerSpeakers = sources;
+  useEffect(() => {
+    if (featuredId && !sources.some((source) => source.id === featuredId)) setFeaturedId(null);
+  }, [featuredId, sources]);
 
   // ── Actions ────────────────────────────────────────────────────────
-  const patchEpisodeStatus = useCallback(
-    (status: 'live' | 'recorded') => {
-      if (!roomId) return;
-      const token = localStorage.getItem('cd_token');
-      fetch(`${API_BASE}/api/episodes/by-room/${roomId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ status }),
-      }).catch(() => {});
-    },
-    [roomId]
-  );
+  const toggleMute = () => {
+    const muted = !isMuted;
+    localStream?.getAudioTracks().forEach((track) => { track.enabled = !muted; });
+    setIsMuted(muted);
+    toggleRoomMute();
+  };
+
+  const toggleCamera = () => {
+    const off = !isCameraOff;
+    localStream?.getVideoTracks().forEach((track) => { track.enabled = !off; });
+    setIsCameraOff(off);
+    toggleRoomCamera();
+  };
 
   const enterStudio = useCallback(async () => {
     if (!roomId) {
-      setToast('Missing studio room. Return to the dashboard and open an episode.');
+      setToast('Missing studio room. Return home and start a live event.');
       return;
     }
     if (!name.trim()) {
@@ -294,49 +382,76 @@ const Studio: React.FC = () => {
           role: isGuest ? 'guest' : 'host',
         }),
       });
-      if (!res.ok) throw new Error('Could not create studio access token.');
+      if (!res.ok) {
+        if (!isGuest) {
+          setPhase('studio');
+          setToast('Solo studio ready. Guest connections require LiveKit configuration.');
+          return;
+        }
+        throw new Error('Guest connections are unavailable. Ask the host to check LiveKit configuration.');
+      }
       const data = (await res.json()) as { token: string; livekitUrl?: string };
-      await connect(roomId, name.trim(), data.token, data.livekitUrl);
+      await connect(roomId, name.trim(), data.token, data.livekitUrl, localStream);
       sessionStorage.removeItem('guestName');
       sessionStorage.removeItem('guestRole');
       setPhase('studio');
     } catch (err) {
       setToast(err instanceof Error ? err.message : 'Failed to enter the studio.');
     }
-  }, [roomId, name, isGuest, connect]);
+  }, [roomId, name, isGuest, connect, localStream]);
 
   const goLive = useCallback(async () => {
-    if (!youtube.enabled && !facebook.enabled) {
-      setToast('Connect YouTube or Facebook first (add a stream key).');
+    if (!(youtube.enabled && (youtube.key || savedDestinations?.youtube)) && !(facebook.enabled && (facebook.key || savedDestinations?.facebook))) {
+      setToast('Pair this browser with the saved publishing destinations first.');
       return;
     }
     const { ctx, dest } = ensureAudioMix();
     if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
-    await startStream(canvasRef, dest.stream);
+    const started = await startStream(canvasRef, dest.stream, quality);
+    if (!started) return;
     if (recordEnabled) startRecording(roomId, showName);
-    patchEpisodeStatus('live');
-  }, [youtube.enabled, facebook.enabled, ensureAudioMix, startStream, recordEnabled, startRecording, roomId, showName, patchEpisodeStatus]);
+  }, [youtube, facebook, savedDestinations, quality, ensureAudioMix, startStream, recordEnabled, startRecording, roomId, showName]);
+
+  const shareScreen = async () => {
+    if (await presentation.startScreen()) { setFeaturedId('screen'); setLayout('pip'); }
+  };
+  const loadClip = async (file: File) => {
+    if (await presentation.loadClip(file)) { setFeaturedId('reference'); setLayout('pip'); }
+  };
+  const playClip = async () => {
+    const { ctx } = ensureAudioMix();
+    await ctx.resume().catch(() => {});
+    if (!presentation.playing) { setFeaturedId('reference'); setLayout('pip'); }
+    await presentation.toggleClip();
+  };
+
+  useEffect(() => {
+    if (!isStreaming && isRecording) void stopRecording();
+  }, [isStreaming, isRecording, stopRecording]);
 
   const endStream = useCallback(async () => {
     await stopStream();
     if (isRecording) await stopRecording();
-    patchEpisodeStatus('recorded');
-  }, [stopStream, isRecording, stopRecording, patchEpisodeStatus]);
+  }, [stopStream, isRecording, stopRecording]);
 
-  const leaveStudio = useCallback(() => {
+  const leaveStudio = useCallback(async () => {
+    if (isStreaming && !window.confirm('End the broadcast and leave this studio?')) return;
+    if (isStreaming) await stopStream();
+    if (isRecording) await stopRecording();
+    activeLocalStream.current?.getTracks().forEach((track) => track.stop());
     disconnect();
-    window.location.href = isGuest ? '/' : '/admin';
-  }, [disconnect, isGuest]);
+    window.location.href = '/';
+  }, [disconnect, isStreaming, isRecording, stopStream, stopRecording]);
 
   const copyInvite = useCallback(async () => {
     if (!roomId) return;
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/join/${roomId}`);
+      await navigator.clipboard.writeText(`${window.location.origin}/studio/${roomId}?guest=1&studio=${studio}&title=${encodeURIComponent(showName)}`);
       setToast('Guest invite link copied.');
     } catch {
       setToast('Could not copy link.');
     }
-  }, [roomId]);
+  }, [roomId, studio, showName]);
 
   useEffect(() => {
     if (streamError) setToast(streamError);
@@ -349,20 +464,23 @@ const Studio: React.FC = () => {
   }, [toast]);
 
   const readyToGoLive =
-    (youtube.enabled && youtube.key.trim().length > 0) ||
-    (facebook.enabled && facebook.key.trim().length > 0);
+    ((youtube.enabled && (youtube.key.trim().length > 0 || Boolean(savedDestinations?.youtube))) ||
+    (facebook.enabled && (facebook.key.trim().length > 0 || Boolean(savedDestinations?.facebook)))) &&
+    (programStyle.background === 'camera' || backgroundStatus === 'ready');
 
   // ── Render: Setup phase ────────────────────────────────────────────
   if (phase === 'setup') {
     return (
-      <SetupScreen
-        roomId={roomId}
+      <LiveSetup
         isGuest={isGuest}
+        title={showName}
+        studio={studio}
+        onStudio={(value) => { setStudio(value); setLayout(findStudio(value).layout); }}
         name={name}
         onName={setName}
         previewRef={previewRef}
         localStream={localStream}
-        audioLevel={audioLevel}
+        mediaLoading={mediaLoading}
         devices={devices}
         selectedVideo={selectedVideo}
         selectedAudio={selectedAudio}
@@ -370,295 +488,49 @@ const Studio: React.FC = () => {
         onSelectAudio={setSelectedAudio}
         isConnecting={isConnecting}
         onEnter={() => void enterStudio()}
-        toast={toast}
+        error={toast}
       />
     );
   }
 
   // ── Render: Studio phase ───────────────────────────────────────────
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: COLORS.bg, overflow: 'hidden' }}>
-      {/* Hidden 1080p compositor + visible preview share the same canvas */}
+    <>
       <StudioCanvasMixer
         canvasRef={canvasRef}
         speakers={mixerSpeakers}
         overlays={[]}
         showName={showName}
         episodeNumber={1}
-        isLive={isStreaming}
+        isLive={isStreaming && broadcast.health?.status === 'live'}
         layout={layout}
-        accentColor={COLORS.primaryBlue}
+        accentColor={findStudio(studio).accent}
+        backgroundUrl={findStudio(studio).image}
         lowerThird={null}
+        programStyle={programStyle}
+        onBackgroundStatus={setBackgroundStatus}
       />
-
-      {/* Header */}
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          padding: '12px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          background: 'rgba(5,10,21,0.9)',
+      <StudioDesk
+        canvasRef={canvasRef} showName={showName} isGuest={isGuest}
+        studio={studio} onStudio={setStudio} layout={layout} onLayout={setLayout}
+        style={programStyle} onStyle={setProgramStyle} backgroundStatus={backgroundStatus}
+        sources={sources} featuredId={featuredId} onFeature={setFeaturedId}
+        devices={multiCam.availableDevices.filter((device) => !multiCam.cameras.some((camera) => camera.deviceId === device.deviceId))}
+        onAddCamera={(device) => void multiCam.addCamera(device)} onRemoveCamera={multiCam.removeCamera}
+        onInvite={() => void copyInvite()} isMuted={isMuted} isCameraOff={isCameraOff} onMute={toggleMute} onCamera={toggleCamera}
+        presentation={presentation} onShare={() => void shareScreen()} onLoadClip={(file) => void loadClip(file)} onPlayClip={() => void playClip()}
+        broadcast={broadcast} quality={quality} onQuality={setQuality} ready={readyToGoLive}
+        onStart={() => void goLive()} onStop={() => void endStream()} onLeave={() => void leaveStudio()}
+        saved={savedDestinations} destinations={{ youtube: youtube.enabled, facebook: facebook.enabled }}
+        onDestination={(platform, enabled) => platform === 'youtube' ? setYoutube((previous) => ({ ...previous, enabled })) : setFacebook((previous) => ({ ...previous, enabled }))}
+        record={recordEnabled} onRecord={setRecordEnabled} isRecording={isRecording}
+        notice={toast} onDismiss={() => setToast(null)}
+        onCopyPairing={() => {
+          if (!savedDestinations) return;
+          void navigator.clipboard.writeText(savedDestinations.publisherId).then(() => setToast('Publisher pairing ID copied.')).catch(() => setToast('Could not copy publisher pairing ID.'));
         }}
-      >
-        <LogoWatermark size="sm" variant="light" />
-        <div style={{ flex: 1 }}>
-          <div style={{ color: COLORS.white, fontFamily: FONTS.display, fontWeight: 900, fontSize: 16 }}>{showName}</div>
-          <div style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONTS.ui, fontSize: 11, letterSpacing: '0.1em' }}>
-            STUDIO {roomId}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: isStreaming ? COLORS.liveRed : 'rgba(255,255,255,0.25)' }} />
-          <span style={{ fontFamily: FONTS.ui, fontWeight: 900, fontSize: 12, letterSpacing: '0.15em', color: isStreaming ? '#FF4D4D' : 'rgba(255,255,255,0.4)' }}>
-            {isStreaming ? `LIVE • ${formatDuration(streamDuration)}` : 'OFFLINE'}
-          </span>
-        </div>
-
-        {!isGuest &&
-          (isStreaming ? (
-            <button onClick={() => void endStream()} style={dangerBtn}>
-              END STREAM
-            </button>
-          ) : (
-            <button
-              onClick={() => void goLive()}
-              disabled={!readyToGoLive}
-              title={readyToGoLive ? 'Start broadcasting' : 'Connect YouTube or Facebook first'}
-              style={{ ...liveBtn, opacity: readyToGoLive ? 1 : 0.45, cursor: readyToGoLive ? 'pointer' : 'not-allowed' }}
-            >
-              ● GO LIVE
-            </button>
-          ))}
-        <button onClick={leaveStudio} style={ghostBtn}>
-          Leave
-        </button>
-      </header>
-
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Program monitor */}
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 20, minWidth: 0, gap: 14 }}>
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              aspectRatio: '16 / 9',
-              background: '#000',
-              borderRadius: 18,
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-            }}
-          >
-            <canvas
-              ref={canvasRef}
-              width={1920}
-              height={1080}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                top: 14,
-                left: 14,
-                padding: '4px 12px',
-                borderRadius: 8,
-                background: 'rgba(0,0,0,0.6)',
-                color: 'rgba(255,255,255,0.7)',
-                fontFamily: FONTS.ui,
-                fontSize: 10,
-                fontWeight: 900,
-                letterSpacing: '0.15em',
-              }}
-            >
-              PROGRAM
-            </div>
-          </div>
-
-          {/* Layout + local controls */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-            <span style={{ fontFamily: FONTS.ui, fontSize: 10, fontWeight: 900, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.35)' }}>
-              LAYOUT
-            </span>
-            {LAYOUTS.map((l) => (
-              <button
-                key={l.value}
-                onClick={() => setLayout(l.value)}
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: 10,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: layout === l.value ? 'rgba(0,168,255,0.2)' : 'rgba(255,255,255,0.04)',
-                  color: layout === l.value ? COLORS.primaryBlue : 'rgba(255,255,255,0.6)',
-                  fontFamily: FONTS.ui,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                }}
-              >
-                {l.label}
-              </button>
-            ))}
-            <div style={{ flex: 1 }} />
-            <button onClick={toggleMute} style={pillBtn(isMuted, true)}>
-              {isMuted ? '🔇 Muted' : '🎙️ Mic'}
-            </button>
-            <button onClick={toggleCamera} style={pillBtn(isCameraOff, true)}>
-              {isCameraOff ? '📷 Cam Off' : '📹 Cam'}
-            </button>
-          </div>
-        </main>
-
-        {/* Right rail */}
-        <aside
-          style={{
-            width: 'clamp(300px, 26vw, 380px)',
-            flexShrink: 0,
-            borderLeft: '1px solid rgba(255,255,255,0.06)',
-            background: 'rgba(5,10,21,0.6)',
-            overflowY: 'auto',
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-          }}
-        >
-          {/* Sources */}
-          <section style={card}>
-            <div style={cardTitle}>SOURCES</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {sources.map((s) => (
-                <div
-                  key={s.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '10px 12px',
-                    borderRadius: 12,
-                    background: featuredId === s.id ? 'rgba(0,168,255,0.12)' : 'rgba(255,255,255,0.03)',
-                    border: featuredId === s.id ? `1px solid ${COLORS.primaryBlue}` : '1px solid rgba(255,255,255,0.06)',
-                  }}
-                >
-                  <span style={{ fontSize: 16 }}>{s.kind === 'guest' ? '🌐' : s.kind === 'camera' ? '🎥' : '⭐'}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: COLORS.white, fontFamily: FONTS.ui, fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {s.label}
-                    </div>
-                    <div style={{ color: 'rgba(255,255,255,0.35)', fontFamily: FONTS.ui, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                      {s.kind}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setFeaturedId(featuredId === s.id ? null : s.id)}
-                    title="Feature this source (spotlight / PiP)"
-                    style={{
-                      padding: '5px 10px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: featuredId === s.id ? COLORS.primaryBlue : 'rgba(255,255,255,0.08)',
-                      color: featuredId === s.id ? '#001529' : 'rgba(255,255,255,0.7)',
-                      fontFamily: FONTS.ui,
-                      fontSize: 10,
-                      fontWeight: 900,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {featuredId === s.id ? 'FEATURED' : 'FEATURE'}
-                  </button>
-                  {s.kind === 'camera' && (
-                    <button
-                      onClick={() => multiCam.removeCamera(s.id)}
-                      title="Remove camera"
-                      style={{ padding: '5px 8px', borderRadius: 8, border: 'none', background: 'rgba(255,77,77,0.15)', color: '#FF4D4D', fontWeight: 900, cursor: 'pointer' }}
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-              {sources.length === 0 && (
-                <div style={{ color: 'rgba(255,255,255,0.35)', fontFamily: FONTS.ui, fontSize: 12 }}>No sources yet.</div>
-              )}
-            </div>
-
-            {/* Add a physical camera */}
-            {!isGuest && (
-              <div style={{ marginTop: 12 }}>
-                <select
-                  defaultValue=""
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      void multiCam.addCamera(e.target.value);
-                      e.target.value = '';
-                    }
-                  }}
-                  style={selectStyle}
-                >
-                  <option value="">+ Add a camera…</option>
-                  {multiCam.availableDevices
-                    .filter((d) => !multiCam.cameras.some((c) => c.deviceId === d.deviceId))
-                    .map((d) => (
-                      <option key={d.deviceId} value={d.deviceId}>
-                        {d.label || `Camera ${d.deviceId.slice(0, 5)}`}
-                      </option>
-                    ))}
-                </select>
-                <button onClick={() => void copyInvite()} style={{ ...outlineBtn, width: '100%', marginTop: 8 }}>
-                  🔗 Copy guest invite link
-                </button>
-              </div>
-            )}
-          </section>
-
-          {/* Destinations */}
-          {!isGuest && (
-            <section style={card}>
-              <div style={cardTitle}>GO LIVE TO</div>
-              <DestinationRow
-                name="YouTube"
-                color={COLORS.youtube}
-                icon="▶️"
-                enabled={youtube.enabled}
-                streamKey={youtube.key}
-                placeholder="YouTube stream key"
-                onToggle={(v) => setYoutube((p) => ({ ...p, enabled: v }))}
-                onKey={(k) => setYoutube((p) => ({ ...p, key: k, enabled: k.trim().length > 0 || p.enabled }))}
-                disabled={isStreaming}
-              />
-              <DestinationRow
-                name="Facebook"
-                color={COLORS.facebook}
-                icon="📘"
-                enabled={facebook.enabled}
-                streamKey={facebook.key}
-                placeholder="Facebook stream key"
-                onToggle={(v) => setFacebook((p) => ({ ...p, enabled: v }))}
-                onKey={(k) => setFacebook((p) => ({ ...p, key: k, enabled: k.trim().length > 0 || p.enabled }))}
-                disabled={isStreaming}
-              />
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, color: 'rgba(255,255,255,0.6)', fontFamily: FONTS.ui, fontSize: 12 }}>
-                <input type="checkbox" checked={recordEnabled} disabled={isStreaming} onChange={(e) => setRecordEnabled(e.target.checked)} />
-                Also record this session
-              </label>
-            </section>
-          )}
-
-          {isGuest && (
-            <section style={card}>
-              <div style={cardTitle}>YOU'RE IN THE STUDIO</div>
-              <p style={{ color: 'rgba(255,255,255,0.55)', fontFamily: FONTS.ui, fontSize: 13, lineHeight: 1.5, margin: 0 }}>
-                The host controls the broadcast. Keep your camera framed and your mic on — you're part of the show.
-              </p>
-            </section>
-          )}
-        </aside>
-      </div>
-
-      {toast && <Toast message={toast} />}
-    </div>
+      />
+    </>
   );
 };
 
@@ -758,6 +630,8 @@ interface DestinationRowProps {
   name: string;
   color: string;
   icon: string;
+  targetUrl?: string;
+  targetLabel?: string;
   enabled: boolean;
   streamKey: string;
   placeholder: string;
@@ -770,6 +644,8 @@ const DestinationRow: React.FC<DestinationRowProps> = ({
   name,
   color,
   icon,
+  targetUrl,
+  targetLabel,
   enabled,
   streamKey,
   placeholder,
@@ -780,7 +656,19 @@ const DestinationRow: React.FC<DestinationRowProps> = ({
   <div style={{ marginBottom: 12 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
       <span style={{ fontSize: 16 }}>{icon}</span>
-      <span style={{ flex: 1, color: COLORS.white, fontFamily: FONTS.ui, fontSize: 14, fontWeight: 800 }}>{name}</span>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <span style={{ color: COLORS.white, fontFamily: FONTS.ui, fontSize: 14, fontWeight: 800 }}>{name}</span>
+        {targetUrl && (
+          <a
+            href={targetUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: 'rgba(255,255,255,0.6)', fontFamily: FONTS.ui, fontSize: 11, textDecoration: 'none' }}
+          >
+            {targetLabel || targetUrl} ↗
+          </a>
+        )}
+      </div>
       <label style={{ position: 'relative', display: 'inline-block', width: 40, height: 22 }}>
         <input
           type="checkbox"

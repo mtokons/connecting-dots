@@ -9,14 +9,19 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import http from 'http';
+import path from 'path';
+import { requireWorkspace, identifyWorkspace } from './middleware/workspace';
+import { workspaceChannel } from './routes/workspaceChannel';
+import { VideoProjects } from './services/videoProjects';
+import { createVideoProjectsRouter } from './routes/videoProjects';
+import { uploadVideoFile } from './services/youtubeUpload';
 
 // New core modules (Phase 0)
 import { db } from './db';        // SQLite — auto-migrates from db.json
-import './auth';                  // Seeds admin users on import
-import { initWs, onBinary } from './ws';
+import { initWs, onBinary, onMessage } from './ws';
 
 // Routes
-import streamRouter, { getFfmpegProcess } from './routes/stream';
+import streamRouter, { failOwnedStream, getFfmpegProcess, recordStreamInput, stopOwnedStream } from './routes/stream';
 import recordingsRouter from './routes/recordings';
 import livekitRouter from './routes/livekit';
 import aiRouter from './routes/ai';
@@ -25,8 +30,6 @@ import chatRouter from './routes/chat';
 import storageRouter from './routes/storage';
 import transcribeRouter from './routes/transcribe';
 import socialRouter from './routes/social';
-import youtubeRouter from './routes/youtube';
-import authRouter from './routes/auth';
 
 // ─── Express Setup ───────────────────────────────────────────
 
@@ -48,7 +51,7 @@ app.use(
 );
 
 app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
@@ -70,8 +73,17 @@ app.use('/api/chat', chatRouter);
 app.use('/api/storage', storageRouter);
 app.use('/api/transcribe', transcribeRouter);
 app.use('/api/social', socialRouter);
-app.use('/api/youtube', youtubeRouter);
-app.use('/api/auth', authRouter);
+const channel = workspaceChannel(db);
+app.use('/api/youtube', channel.router);
+
+const videoProjects = new VideoProjects(path.resolve(process.env.VIDEO_SCRATCH_DIR || 'recordings/_editor'));
+app.use('/api/video-projects', createVideoProjectsRouter(videoProjects, requireWorkspace,
+  (filename, metadata, owner) => uploadVideoFile(filename, metadata, () => channel.getToken(owner))));
+const cleanupTimer = setInterval(() => {
+  void videoProjects.initialized.then(() => videoProjects.cleanup()).catch((error) => console.error('Video cleanup failed:', error));
+}, 5 * 60 * 1000);
+cleanupTimer.unref();
+void videoProjects.initialized.catch((error) => console.error('Video project initialization failed:', error));
 
 // Capability discovery
 app.get('/api/capabilities', (_req, res) => {
@@ -97,26 +109,49 @@ app.get('/api/capabilities', (_req, res) => {
       webhook: Boolean(process.env.GENERIC_WEBHOOK_URL),
     },
     version: process.env.APP_VERSION || '2.0.0',
+    videoEditor: true,
   });
 });
 
 // ─── HTTP + WebSocket Server ────────────────────────────────
 
 const server = http.createServer(app);
+server.on('close', () => clearInterval(cleanupTimer));
 
 // Native WebSocket (replaces Socket.IO — single connection per client)
 initWs(server, allowedOrigins);
 
 // Wire binary WS messages (stream chunks) to FFmpeg stdin
-onBinary((_client, buf) => {
-  const ffmpeg = getFfmpegProcess();
-  if (ffmpeg && ffmpeg.stdin && !ffmpeg.stdin.destroyed) {
+const streamSources = new WeakMap<object, string>();
+onMessage('stream:identify', (client, message) => {
+  client.workspace = identifyWorkspace(typeof message.token === 'string' ? message.token : '') || undefined;
+});
+onMessage('stream:stop', (client, message) => {
+  if (!client.workspace) return;
+  stopOwnedStream(client.workspace);
+  client.ws.send(JSON.stringify({ type: 'stream:drained', requestId: typeof message.requestId === 'string' ? message.requestId.slice(0, 64) : '' }));
+});
+onMessage('stream:disconnect', (client) => {
+  const process = getFfmpegProcess(client.workspace || '');
+  if (process && streamSources.get(process) === client.id) stopOwnedStream(client.workspace!);
+});
+onBinary((client, buf) => {
+  const ffmpeg = getFfmpegProcess(client.workspace || '');
+  if (ffmpeg && ffmpeg.stdin && !ffmpeg.stdin.destroyed && ffmpeg.stdin.writable) {
+    const source = streamSources.get(ffmpeg);
+    if (source && source !== client.id) return;
+    streamSources.set(ffmpeg, client.id);
     try {
-      ffmpeg.stdin.write(buf);
-    } catch (err: any) {
-      if (err?.code !== 'EPIPE') {
-        console.warn('stream:chunk write failed:', err?.message || err);
+      if (ffmpeg.stdin.writableLength + buf.length > 8 * 1024 * 1024) {
+        failOwnedStream(client.workspace!, 'The encoder could not keep up. Restart at 720p or reduce other server workloads.');
+        return;
       }
+      recordStreamInput(client.workspace!, buf.length);
+      ffmpeg.stdin.write(buf, (err) => {
+        if (err) failOwnedStream(client.workspace!, 'The video relay disconnected. Check your destination and restart.');
+      });
+    } catch {
+      failOwnedStream(client.workspace!, 'The video relay disconnected. Check your destination and restart.');
     }
   }
 });

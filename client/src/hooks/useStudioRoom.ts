@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Room, RoomEvent, LocalParticipant, RemoteParticipant } from 'livekit-client';
+import { Room, RoomEvent, Track, LocalParticipant, RemoteParticipant } from 'livekit-client';
 import { LIVEKIT_URL, API_BASE } from '../utils/constants';
 
 interface UseStudioRoomReturn {
@@ -16,7 +16,8 @@ interface UseStudioRoomReturn {
     roomId: string,
     participantName: string,
     token: string,
-    urlOverride?: string
+    urlOverride?: string,
+    media?: MediaStream | null
   ) => Promise<void>;
   disconnect: () => void;
   toggleMute: () => void;
@@ -59,19 +60,20 @@ const useStudioRoom = (): UseStudioRoomReturn => {
   }, []);
 
   const connect = useCallback(
-    async (_roomId: string, _participantName: string, token: string, urlOverride?: string) => {
+    async (_roomId: string, _participantName: string, token: string, urlOverride?: string, media?: MediaStream | null) => {
       try {
         setIsConnecting(true);
         setError(null);
 
-        const nextRoom = new Room();
+        const nextRoom = new Room({ videoCaptureDefaults: { resolution: { width: 1920, height: 1080, frameRate: 30 } }, audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
         roomRef.current = nextRoom;
 
         nextRoom.on(RoomEvent.ParticipantConnected, () => updateRemoteParticipants(nextRoom));
         nextRoom.on(RoomEvent.ParticipantDisconnected, () => updateRemoteParticipants(nextRoom));
         nextRoom.on(RoomEvent.TrackSubscribed, () => updateRemoteParticipants(nextRoom));
         nextRoom.on(RoomEvent.TrackUnsubscribed, () => updateRemoteParticipants(nextRoom));
-        nextRoom.on(RoomEvent.ActiveSpeakersChanged, () => updateRemoteParticipants(nextRoom));
+        nextRoom.on(RoomEvent.TrackMuted, () => updateRemoteParticipants(nextRoom));
+        nextRoom.on(RoomEvent.TrackUnmuted, () => updateRemoteParticipants(nextRoom));
         nextRoom.on(RoomEvent.ParticipantMetadataChanged, (_prevMetadata, participant) => {
           if (participant === nextRoom.localParticipant) {
             setLocalParticipant(nextRoom.localParticipant);
@@ -85,7 +87,11 @@ const useStudioRoom = (): UseStudioRoomReturn => {
         });
 
         await nextRoom.connect(urlOverride ?? LIVEKIT_URL, token);
-        await nextRoom.localParticipant.enableCameraAndMicrophone();
+        if (media) {
+          for (const track of media.getTracks()) {
+            await nextRoom.localParticipant.publishTrack(track, { source: track.kind === 'video' ? Track.Source.Camera : Track.Source.Microphone });
+          }
+        } else await nextRoom.localParticipant.enableCameraAndMicrophone();
 
         setRoom(nextRoom);
         setLocalParticipant(nextRoom.localParticipant);
@@ -94,6 +100,7 @@ const useStudioRoom = (): UseStudioRoomReturn => {
       } catch (err) {
         disconnect();
         setError(err instanceof Error ? err.message : 'Failed to connect');
+        throw err;
       } finally {
         setIsConnecting(false);
       }

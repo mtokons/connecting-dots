@@ -45,7 +45,7 @@ interface StoredTokens {
 const loadTokens = () => db.getIntegration<StoredTokens>('youtube');
 const saveTokens = (t: StoredTokens) => db.setIntegration('youtube', t);
 
-const ensureFreshAccessToken = async (): Promise<string> => {
+export const ensureFreshAccessToken = async (): Promise<string> => {
   const tokens = await loadTokens();
   if (!tokens) throw new Error('YouTube not connected. Visit /api/youtube/auth-url first.');
   if (tokens.expiry > Date.now() + 30_000) return tokens.access_token;

@@ -318,6 +318,7 @@ const PostProduction: React.FC = () => {
         )}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
+          <button onClick={() => nav('/edit')} style={topBtn}>UPLOAD & EDIT</button>
           <button onClick={() => nav('/admin')} style={topBtn}>ADMIN</button>
           <button onClick={() => nav('/')} style={topBtn}>HOME</button>
         </div>

@@ -40,6 +40,10 @@ let _configLoaded = false;
 
 export const loadApiConfig = async () => {
   if (_configLoaded) return;
+  if (import.meta.env.DEV && import.meta.env.VITE_API_BASE !== undefined) {
+    _configLoaded = true;
+    return;
+  }
   try {
     const res = await fetch('/api-config.json', { cache: 'no-cache' });
     if (res.ok) {
