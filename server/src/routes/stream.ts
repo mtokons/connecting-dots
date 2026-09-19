@@ -66,11 +66,11 @@ export function parseStreamProgress(values: Record<string, string>) {
 
 export function buildStreamEncodingArgs(codec: 'h264' | 'vp8' = 'vp8'): string[] {
   return [
-    '-hide_banner', '-loglevel', 'warning', '-nostats', '-progress', 'pipe:1',
+    '-hide_banner', '-loglevel', 'info', '-nostats', '-progress', 'pipe:1',
     '-i', 'pipe:0', '-map', '0:v:0', '-map', '0:a:0?',
     '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-threads', '2',
     '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30',
-    '-b:v', '4000k', '-minrate', '4000k', '-maxrate', '4500k', '-bufsize', '8000k',
+    '-b:v', '3500k', '-minrate', '3500k', '-maxrate', '3500k', '-bufsize', '7000k',
     '-x264-params', 'nal-hrd=cbr:force-cfr=1', '-pix_fmt', 'yuv420p', '-g', '60', '-keyint_min', '60', '-sc_threshold', '0',
     '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', '-af', 'aresample=async=1:first_pts=0',
   ];
