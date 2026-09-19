@@ -72,7 +72,7 @@ export function buildStreamEncodingArgs(codec: 'h264' | 'vp8' = 'vp8'): string[]
   // H.264 from the browser is already broadcast-ready — copy it (no CPU-bound transcode so the
   // relay always keeps up with realtime, which is what YouTube/Facebook need to start playback).
   const video = codec === 'h264'
-    ? ['-c:v', 'copy']
+    ? ['-c:v', 'copy', '-r', '30']
     : [
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-threads', '2',
         '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30',
