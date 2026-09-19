@@ -186,6 +186,7 @@ export default function StudioDesk(props: Props) {
                 const hasServer = Boolean(props.saved?.[destination.platform]);
                 const isEnabled = props.destinations[destination.platform];
                 const key = props.destinationKeys[destination.platform] || '';
+                const liveStatus = broadcast.health?.destinations?.find((d) => d.name === destination.name);
                 return (
                   <div key={destination.platform} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0', borderBottom: '1px solid var(--desk-line)' }}>
                     <div className="desk-destination" style={{ minHeight: 'auto' }}>
@@ -193,9 +194,15 @@ export default function StudioDesk(props: Props) {
                       <div>
                         <strong>{destination.name}</strong>
                         <a href={destination.url} target="_blank" rel="noreferrer">{destination.channel}<ExternalLink size={12} /></a>
-                        <small style={{ color: hasServer ? 'var(--desk-green)' : key.trim() ? '#2f7455' : 'var(--desk-muted)' }}>
-                          {hasServer ? '✓ Connected on server' : key.trim() ? 'Custom stream key set' : 'Enter stream key below'}
-                        </small>
+                        {liveStatus ? (
+                          <small style={{ color: liveStatus.ok ? '#a72b3d' : '#a83936', fontWeight: 700 }}>
+                            {liveStatus.ok ? '● Live now' : '✕ Rejected — refresh stream key'}
+                          </small>
+                        ) : (
+                          <small style={{ color: hasServer ? 'var(--desk-green)' : key.trim() ? '#2f7455' : 'var(--desk-muted)' }}>
+                            {hasServer ? '✓ Connected on server' : key.trim() ? 'Custom stream key set' : 'Enter stream key below'}
+                          </small>
+                        )}
                       </div>
                       <input
                         type="checkbox"

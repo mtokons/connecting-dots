@@ -16,6 +16,7 @@ interface RelayHealth {
   bytesReceived: number;
   duplicateFrames: number;
   droppedFrames: number;
+  destinations: { name: string; ok: boolean }[];
   error: string | null;
 }
 
@@ -204,6 +205,10 @@ const useRTMPStream = () => {
         if (controller.signal.aborted || stoppingRef.current) return;
         failures = 0;
         setHealth(response.data);
+        const failed = (response.data.destinations || []).filter((d) => !d.ok).map((d) => d.name);
+        if (failed.length && failed.length < (response.data.destinations || []).length) {
+          setError(`${failed.join(' and ')} rejected the stream (likely an expired stream key). Still live on the other destination.`);
+        }
         if (['error', 'stopped', 'idle'].includes(response.data.status)) failStream(response.data.error || 'The server relay stopped. Check the destination and restart.');
       } catch {
         if (!controller.signal.aborted && ++failures >= 3) failStream('Server health checks failed. The broadcast has been stopped.');

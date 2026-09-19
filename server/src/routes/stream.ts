@@ -19,10 +19,11 @@ interface StreamHealth {
   droppedFrames: number;
   outputBytes: number;
   bytesReceived: number;
+  destinations: { name: string; ok: boolean }[];
   error: string | null;
 }
 
-const emptyHealth = (): StreamHealth => ({ status: 'idle', frames: 0, fps: 0, seconds: 0, speed: 0, duplicateFrames: 0, droppedFrames: 0, outputBytes: 0, bytesReceived: 0, error: null });
+const emptyHealth = (): StreamHealth => ({ status: 'idle', frames: 0, fps: 0, seconds: 0, speed: 0, duplicateFrames: 0, droppedFrames: 0, outputBytes: 0, bytesReceived: 0, destinations: [], error: null });
 let health = emptyHealth();
 
 export const getFfmpegProcess = (owner = '') => owner && owner === streamOwner && health.status !== 'stopping' && health.status !== 'error' ? ffmpegProcess : null;
@@ -111,16 +112,20 @@ interface StreamDestinations {
 }
 
 export function resolveStreamTargets(input: StreamDestinations, defaults: NodeJS.ProcessEnv = process.env): string[] {
+  return resolveLabeledTargets(input, defaults).map((t) => t.url);
+}
+
+export function resolveLabeledTargets(input: StreamDestinations, defaults: NodeJS.ProcessEnv = process.env): { name: string; url: string }[] {
   const destinations = [
-    { value: input.youtube, saved: defaults.RTMP_YOUTUBE_KEY, base: 'rtmp://a.rtmp.youtube.com/live2/' },
-    { value: input.facebook, saved: defaults.RTMP_FACEBOOK_KEY, base: 'rtmps://live-api-s.facebook.com:443/rtmp/' },
-    { value: input.instagram, saved: undefined, base: 'rtmps://live-upload.instagram.com:443/rtmp/' },
+    { name: 'YouTube', value: input.youtube, saved: defaults.RTMP_YOUTUBE_KEY, base: 'rtmp://a.rtmp.youtube.com/live2/' },
+    { name: 'Facebook', value: input.facebook, saved: defaults.RTMP_FACEBOOK_KEY, base: 'rtmps://live-api-s.facebook.com:443/rtmp/' },
+    { name: 'Instagram', value: input.instagram, saved: undefined, base: 'rtmps://live-upload.instagram.com:443/rtmp/' },
   ];
-  return destinations.flatMap(({ value, saved, base }) => {
+  return destinations.flatMap(({ name, value, saved, base }) => {
     const key = value === true ? saved : typeof value === 'string' ? value : '';
     if (!key || key.startsWith('your_')) return [];
-    const target = normalizeTarget(key, base);
-    return target ? [target] : [];
+    const url = normalizeTarget(key, base);
+    return url ? [{ name, url }] : [];
   });
 }
 
@@ -149,7 +154,8 @@ router.post('/start', (req: Request, res: Response) => {
     res.status(403).json({ error: 'This browser is not paired with the saved publishing destinations.' });
     return;
   }
-  const resolvedTargets = resolveStreamTargets({ youtube, facebook, instagram });
+  const labeledTargets = resolveLabeledTargets({ youtube, facebook, instagram });
+  const resolvedTargets = labeledTargets.map((t) => t.url);
 
   if (targets) {
     res.status(400).json({ error: 'Choose a supported destination and enter its stream key, not a custom server URL.' });
@@ -184,7 +190,7 @@ router.post('/start', (req: Request, res: Response) => {
     ffmpegProcess = encoder;
     streamOwner = workspaceOwner(req);
     console.log(`[stream:start] owner=${streamOwner} codec=${codec} targets=${resolvedTargets.length}`);
-    health = { ...emptyHealth(), status: 'starting' };
+    health = { ...emptyHealth(), status: 'starting', destinations: labeledTargets.map((t) => ({ name: t.name, ok: true })) };
     const startedAt = Date.now();
     let lastFrameAt = startedAt;
     let pendingOutput = '';
@@ -227,7 +233,18 @@ router.post('/start', (req: Request, res: Response) => {
 
     encoder.stdin?.on('error', () => {});
     encoder.stderr?.on('data', (chunk: Buffer) => {
-      console.warn('[FFmpeg-live]', redactStreamError(chunk.toString().trim()));
+      const message = chunk.toString();
+      // A tee slave that can't open (e.g. an expired/invalid stream key) must not fail silently.
+      const slaveFail = message.match(/Slave muxer #(\d+) failed/);
+      if (slaveFail && health.destinations[Number(slaveFail[1])]) {
+        health.destinations[Number(slaveFail[1])].ok = false;
+      }
+      // A single destination that rejects the connection (expired/invalid key) exits FFmpeg.
+      if (health.destinations.length === 1 && /TLS fatal alert|Error opening output|I\/O error|Input\/output error|Operation timed out|Connection refused/i.test(message)) {
+        health.destinations[0].ok = false;
+        health.error = `${health.destinations[0].name} rejected the connection — the stream key is likely expired or invalid. Generate a fresh key and re-enter it.`;
+      }
+      console.warn('[FFmpeg-live]', redactStreamError(message.trim()));
     });
 
     encoder.on('error', () => {

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
-import router, { buildStreamEncodingArgs, getFfmpegProcess, parseStreamProgress, redactStreamError, resolveStreamTargets, stopOwnedStream } from './stream';
+import router, { buildStreamEncodingArgs, getFfmpegProcess, parseStreamProgress, redactStreamError, resolveLabeledTargets, resolveStreamTargets, stopOwnedStream } from './stream';
 
 test('stream encoding is optimized and live input is not throttled a second time', () => {
   const h264 = buildStreamEncodingArgs('h264');
@@ -38,6 +38,15 @@ test('saved destinations require explicit selection and never override an off sw
   assert.deepEqual(resolveStreamTargets({ youtube: 'manual-youtube', facebook: '' }, defaults), ['rtmp://a.rtmp.youtube.com/live2/manual-youtube']);
   assert.deepEqual(resolveStreamTargets({ youtube: 'rtmp://127.0.0.1/private' }, defaults), []);
   assert.deepEqual(resolveStreamTargets({ youtube: true }, { RTMP_YOUTUBE_KEY: 'your_youtube_stream_key_here' }), []);
+});
+
+test('labeled targets name each destination for per-destination status', () => {
+  const defaults = { RTMP_YOUTUBE_KEY: 'yt-key', RTMP_FACEBOOK_KEY: 'fb-key' };
+  assert.deepEqual(resolveLabeledTargets({ youtube: true, facebook: true }, defaults), [
+    { name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/yt-key' },
+    { name: 'Facebook', url: 'rtmps://live-api-s.facebook.com:443/rtmp/fb-key' },
+  ]);
+  assert.deepEqual(resolveLabeledTargets({ facebook: true }, defaults).map((t) => t.name), ['Facebook']);
 });
 
 test('login-free stream API rejects unscoped access and arbitrary relay targets', async () => {
