@@ -119,6 +119,9 @@ const Studio: React.FC = () => {
     setMediaLoading(true);
     let disposed = false;
     let audioCtx: AudioContext | null = null;
+    const mediaTimeout = setTimeout(() => {
+      if (!disposed) setMediaLoading(false);
+    }, 3000);
 
     (async () => {
       try {
@@ -154,12 +157,14 @@ const Studio: React.FC = () => {
       } catch {
         if (!disposed) setToast('Unable to access camera/microphone. Check browser permissions.');
       } finally {
+        clearTimeout(mediaTimeout);
         if (!disposed) setMediaLoading(false);
       }
     })();
 
     return () => {
       disposed = true;
+      clearTimeout(mediaTimeout);
       audioCtx?.close().catch(() => {});
     };
   }, [phase, selectedVideo, selectedAudio]);
