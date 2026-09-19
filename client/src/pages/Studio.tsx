@@ -464,9 +464,10 @@ const Studio: React.FC = () => {
   }, [toast]);
 
   const readyToGoLive =
-    ((youtube.enabled && (youtube.key.trim().length > 0 || Boolean(savedDestinations?.youtube))) ||
-    (facebook.enabled && (facebook.key.trim().length > 0 || Boolean(savedDestinations?.facebook)))) &&
-    (programStyle.background === 'camera' || backgroundStatus === 'ready');
+    Boolean(
+      (youtube.enabled && (youtube.key.trim().length > 0 || Boolean(savedDestinations?.youtube))) ||
+      (facebook.enabled && (facebook.key.trim().length > 0 || Boolean(savedDestinations?.facebook)))
+    );
 
   // ── Render: Setup phase ────────────────────────────────────────────
   if (phase === 'setup') {
@@ -522,7 +523,9 @@ const Studio: React.FC = () => {
         broadcast={broadcast} quality={quality} onQuality={setQuality} ready={readyToGoLive}
         onStart={() => void goLive()} onStop={() => void endStream()} onLeave={() => void leaveStudio()}
         saved={savedDestinations} destinations={{ youtube: youtube.enabled, facebook: facebook.enabled }}
+        destinationKeys={{ youtube: youtube.key, facebook: facebook.key }}
         onDestination={(platform, enabled) => platform === 'youtube' ? setYoutube((previous) => ({ ...previous, enabled })) : setFacebook((previous) => ({ ...previous, enabled }))}
+        onDestinationKey={(platform, key) => platform === 'youtube' ? setYoutube((previous) => ({ ...previous, key, enabled: key.trim().length > 0 || previous.enabled })) : setFacebook((previous) => ({ ...previous, key, enabled: key.trim().length > 0 || previous.enabled }))}
         record={recordEnabled} onRecord={setRecordEnabled} isRecording={isRecording}
         notice={toast} onDismiss={() => setToast(null)}
         onCopyPairing={() => {

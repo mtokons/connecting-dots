@@ -34,6 +34,8 @@ test('saved destinations require explicit selection and never override an off sw
 });
 
 test('login-free stream API rejects unscoped access and arbitrary relay targets', async () => {
+  const originalPublisher = process.env.STUDIO_PUBLISHER_WORKSPACE;
+  process.env.STUDIO_PUBLISHER_WORKSPACE = 'workspace:locked-owner';
   const app = express();
   app.use(express.json());
   app.use(router);
@@ -53,5 +55,8 @@ test('login-free stream API rejects unscoped access and arbitrary relay targets'
     assert.equal((await fetch(`${base}/stop`, { method: 'POST', headers })).status, 200);
     assert.equal(getFfmpegProcess('other-workspace'), null);
     assert.equal(stopOwnedStream('other-workspace'), false);
-  } finally { await new Promise<void>((resolve) => server.close(() => resolve())); }
+  } finally {
+    process.env.STUDIO_PUBLISHER_WORKSPACE = originalPublisher;
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
 });

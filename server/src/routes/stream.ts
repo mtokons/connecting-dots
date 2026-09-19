@@ -82,7 +82,7 @@ router.use(requireWorkspace);
 
 router.get('/destinations', (req, res) => {
   const publisherId = workspaceOwner(req);
-  const authorized = process.env.STUDIO_PUBLISHER_WORKSPACE === publisherId;
+  const authorized = !process.env.STUDIO_PUBLISHER_WORKSPACE || process.env.STUDIO_PUBLISHER_WORKSPACE === publisherId;
   res.json({
     publisherId, authorized,
     youtube: authorized && Boolean(process.env.RTMP_YOUTUBE_KEY && !process.env.RTMP_YOUTUBE_KEY.startsWith('your_')),
@@ -141,7 +141,7 @@ router.post('/start', (req: Request, res: Response) => {
     res.status(400).json({ error: 'Unsupported capture codec.' });
     return;
   }
-  if ((youtube === true || facebook === true) && process.env.STUDIO_PUBLISHER_WORKSPACE !== workspaceOwner(req)) {
+  if ((youtube === true || facebook === true) && process.env.STUDIO_PUBLISHER_WORKSPACE && process.env.STUDIO_PUBLISHER_WORKSPACE !== workspaceOwner(req)) {
     res.status(403).json({ error: 'This browser is not paired with the saved publishing destinations.' });
     return;
   }

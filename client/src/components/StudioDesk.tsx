@@ -54,7 +54,9 @@ interface Props {
   onLeave: () => void;
   saved: SavedDestinations | null;
   destinations: { youtube: boolean; facebook: boolean };
+  destinationKeys: { youtube: string; facebook: string };
   onDestination: (platform: 'youtube' | 'facebook', enabled: boolean) => void;
+  onDestinationKey: (platform: 'youtube' | 'facebook', key: string) => void;
   record: boolean;
   onRecord: (record: boolean) => void;
   isRecording: boolean;
@@ -106,7 +108,14 @@ export default function StudioDesk(props: Props) {
       <div className="desk-header-actions">
         {!props.isGuest && (broadcast.isStreaming
           ? <button className="desk-end" disabled={broadcast.isStopping} onClick={props.onStop}><Square size={15} />End broadcast</button>
-          : <button className="desk-go-live" disabled={!props.ready || broadcast.isStarting || broadcast.isStopping} onClick={props.onStart}><Radio size={17} />{broadcast.isStarting ? 'Starting...' : broadcast.isStopping ? 'Stopping...' : 'Go live'}</button>)}
+          : <button
+              className="desk-go-live"
+              disabled={!props.ready || broadcast.isStarting || broadcast.isStopping}
+              onClick={props.onStart}
+              title={!props.ready ? 'Select YouTube or Facebook in Publish tab to enable Go live' : 'Start live broadcast'}
+            >
+              <Radio size={17} />{broadcast.isStarting ? 'Starting...' : broadcast.isStopping ? 'Stopping...' : 'Go live'}
+            </button>)}
         <button className="desk-icon" onClick={props.onLeave} disabled={broadcast.isStarting} title="Leave studio" aria-label="Leave studio"><LogOut size={19} /></button>
       </div>
     </header>
@@ -168,8 +177,52 @@ export default function StudioDesk(props: Props) {
             </section>}
           </>}
           {tab === 'publish' && <>
-            <section className="desk-section"><h2>Destinations</h2>{([{ platform: 'youtube', name: 'YouTube', channel: '@sccg24x7', url: 'https://www.youtube.com/@sccg24x7' }, { platform: 'facebook', name: 'Facebook', channel: 'mysccg', url: 'https://www.facebook.com/mysccg' }] as const).map((destination) => <div className="desk-destination" key={destination.platform}><Radio size={20} /><div><strong>{destination.name}</strong><a href={destination.url} target="_blank" rel="noreferrer">{destination.channel}<ExternalLink size={12} /></a><small>{props.saved?.[destination.platform] ? 'Saved on server' : 'Not paired'}</small></div><input type="checkbox" aria-label={`Publish to ${destination.name}`} checked={props.destinations[destination.platform]} disabled={busy || !props.saved?.[destination.platform]} onChange={(event) => props.onDestination(destination.platform, event.target.checked)} /></div>)}
-              {!props.saved?.authorized && <button className="desk-command" disabled={!props.saved?.publisherId} onClick={props.onCopyPairing}><Copy size={15} />Copy publisher pairing ID</button>}
+            <section className="desk-section">
+              <h2>Destinations</h2>
+              {([
+                { platform: 'youtube' as const, name: 'YouTube', channel: '@sccg24x7', url: 'https://www.youtube.com/@sccg24x7' },
+                { platform: 'facebook' as const, name: 'Facebook', channel: 'mysccg', url: 'https://www.facebook.com/mysccg' },
+              ]).map((destination) => {
+                const hasServer = Boolean(props.saved?.[destination.platform]);
+                const isEnabled = props.destinations[destination.platform];
+                const key = props.destinationKeys[destination.platform] || '';
+                return (
+                  <div key={destination.platform} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0', borderBottom: '1px solid var(--desk-line)' }}>
+                    <div className="desk-destination" style={{ minHeight: 'auto' }}>
+                      <Radio size={20} />
+                      <div>
+                        <strong>{destination.name}</strong>
+                        <a href={destination.url} target="_blank" rel="noreferrer">{destination.channel}<ExternalLink size={12} /></a>
+                        <small style={{ color: hasServer ? 'var(--desk-green)' : key.trim() ? '#2f7455' : 'var(--desk-muted)' }}>
+                          {hasServer ? '✓ Connected on server' : key.trim() ? 'Custom stream key set' : 'Enter stream key below'}
+                        </small>
+                      </div>
+                      <input
+                        type="checkbox"
+                        aria-label={`Publish to ${destination.name}`}
+                        checked={isEnabled}
+                        disabled={busy || (!hasServer && !key.trim())}
+                        onChange={(event) => props.onDestination(destination.platform, event.target.checked)}
+                      />
+                    </div>
+                    {(!hasServer || key.trim().length > 0) && (
+                      <input
+                        type="password"
+                        placeholder={`${destination.name} stream key`}
+                        value={key}
+                        disabled={busy}
+                        onChange={(e) => props.onDestinationKey(destination.platform, e.target.value)}
+                        style={{ fontSize: 12, padding: '6px 8px' }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+              {!props.ready && (
+                <div style={{ color: '#b72f42', fontSize: 12, lineHeight: 1.4, padding: '4px 0' }}>
+                  ● Check YouTube or Facebook above to enable <strong>Go live</strong>.
+                </div>
+              )}
             </section>
             <section className="desk-section"><h2>Output</h2><label>Broadcast quality<select disabled={busy} value={props.quality} onChange={(event) => props.onQuality(event.target.value as BroadcastQuality)}><option value="1080p">1080p / native H.264 where supported</option><option value="720p">720p / lower bandwidth</option></select></label><label className="desk-check"><input type="checkbox" checked={props.record} disabled={busy} onChange={(event) => props.onRecord(event.target.checked)} />Record program</label></section>
             <section className="desk-section"><div className="desk-section-heading"><h2>Relay health</h2><span className="desk-health-state" data-live={transmitting}>{status.toLowerCase()}</span></div><dl className="desk-metrics"><div><dt>Frames / sec</dt><dd>{broadcast.health ? broadcast.health.fps.toFixed(1) : '-'}</dd></div><div><dt>Received</dt><dd>{broadcast.health ? `${(broadcast.health.bytesReceived / 1024 / 1024).toFixed(1)} MB` : '-'}</dd></div><div><dt>Dropped</dt><dd>{broadcast.health?.droppedFrames ?? '-'}</dd></div><div><dt>Duplicated</dt><dd>{broadcast.health?.duplicateFrames ?? '-'}</dd></div></dl><a className="desk-command" href="https://studio.youtube.com/" target="_blank" rel="noreferrer"><ExternalLink size={15} />YouTube Live Control Room</a></section>

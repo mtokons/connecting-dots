@@ -377,7 +377,8 @@ const StudioCanvasMixer: React.FC<StudioCanvasMixerProps> = ({
             } else {
               const frame = cameraFramesRef.current.get(s.id) || new CameraFrame();
               cameraFramesRef.current.set(s.id, frame);
-              const image = cutout && !segmenterRef.current ? null : frame.render(v, programStyle.grade, cutout, Math.max(cellW, cellH * vw / vh));
+              const isCutoutActive = cutout && Boolean(segmenterRef.current);
+              const image = frame.render(v, programStyle.grade, isCutoutActive, Math.max(cellW, cellH * vw / vh));
               if (image) {
                 const { sx, sy, sw, sh } = fitCover(image.width, image.height, cellW, cellH);
                 ctx.drawImage(image, sx, sy, sw, sh, x, y, cellW, cellH);
