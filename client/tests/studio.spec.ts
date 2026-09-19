@@ -81,7 +81,7 @@ test('capture profiles, bounded grading and uncropped presentation geometry', ()
   expect(selectCaptureProfile((mime) => mime.includes('vp8')).codec).toBe('vp8');
   expect(selectCaptureProfile((mime) => mime.includes('webm')).height).toBe(1080);
   expect(selectCaptureProfile(() => true, '720p').bitrate).toBe(3_000_000);
-  expect(selectCaptureProfile(() => true).keyFrameIntervalMs).toBe(2000);
+  expect(selectCaptureProfile(() => true).keyFrameIntervalMs).toBe(1000);
   expect(() => selectCaptureProfile(() => false)).toThrow(/supported broadcast codec/);
   expect(cameraFilter(DEFAULT_CAMERA_GRADE)).toContain('contrast(1.04)');
   expect(cameraFilter({ ...DEFAULT_CAMERA_GRADE, exposure: 100, saturation: 100 })).toContain('saturate(1.4)');
@@ -236,7 +236,7 @@ test('actual studio capture relays to RTMP with YouTube-ready keyframes and orde
     const audio = metadata.streams.find((stream: { codec_type: string }) => stream.codec_type === 'audio');
     expect(video.codec_name).toBe('h264');
     expect(audio.codec_name).toBe('aac');
-    expect(Number(audio.sample_rate)).toBe(48000);
+    expect(Number(audio.sample_rate)).toBe(44100);
     // Keyframe interval is the critical YouTube requirement: must be <= ~2s and start immediately
     const packets = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'packet=pts_time,flags', '-of', 'csv=p=0', output], { encoding: 'utf8' });
     const keyTimes = packets.stdout.trim().split('\n').filter((row) => row.includes('K'))

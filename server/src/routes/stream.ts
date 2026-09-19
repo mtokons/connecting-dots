@@ -79,7 +79,7 @@ export function buildStreamEncodingArgs(codec: 'h264' | 'vp8' = 'vp8'): string[]
         '-b:v', '3500k', '-maxrate', '3500k', '-bufsize', '7000k',
         '-pix_fmt', 'yuv420p', '-g', '60', '-keyint_min', '60', '-sc_threshold', '0',
       ];
-  const audio = ['-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', '-af', 'aresample=async=1:first_pts=0'];
+  const audio = ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-ac', '2', '-af', 'aresample=async=1:first_pts=0'];
   return [...input, ...video, ...audio];
 }
 

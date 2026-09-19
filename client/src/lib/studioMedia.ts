@@ -59,7 +59,7 @@ export function selectCaptureProfile(isSupported: (mime: string) => boolean, qua
     height: fullHD ? 1080 : 720,
     bitrate: fullHD ? 4_500_000 : 3_000_000,
     fps: 30,
-    keyFrameIntervalMs: 2000,
+    keyFrameIntervalMs: 1000,
     label: `${fullHD ? '1080p' : '720p'} / 30 fps${h264 ? '' : ' (VP8)'}`,
   };
 }
