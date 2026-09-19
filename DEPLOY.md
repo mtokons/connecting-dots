@@ -1,7 +1,9 @@
 # Deployment Guide — Connecting Dot Studio
 
-## Studio update: 2026-09-19 (local, not deployed)
+## Deployed Release: 2026-09-19
 
+- Frontend deployed to Firebase Hosting: https://connecting-dots-68dcb.web.app
+- Backend deployed to Oracle Cloud VM via systemd service: https://92-5-129-88.sslip.io
 - The live desk provides one shared person-segmented studio, host-controlled camera
    correction, SCCG logo animation, speaker transitions, lower thirds, a ticker,
    screen sharing and local reference-video playback. It uses 2D person mattes,
@@ -17,9 +19,6 @@
 - YouTube is selected by default; Facebook is off. An omitted or disabled target
    never falls back to its saved server key. Destination failure ends the broadcast
    visibly instead of silently continuing with a failed selected destination.
-- No production deployment, public test broadcast, or YouTube control-room health
-   verification was performed for this update. Existing live production sessions
-   must be checked before restarting the service.
 
 ### Private publisher pairing
 
