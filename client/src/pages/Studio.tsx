@@ -189,6 +189,13 @@ const Studio: React.FC = () => {
       const ctx = new AudioContext({ sampleRate: 48000 });
       audioCtxRef.current = ctx;
       audioDestRef.current = ctx.createMediaStreamDestination();
+      // Ensure audio clock is always running even when all inputs are muted or ungranted
+      const clock = ctx.createOscillator();
+      const clockGain = ctx.createGain();
+      clockGain.gain.value = 0;
+      clock.connect(clockGain).connect(audioDestRef.current);
+      clock.start();
+
       const filter = ctx.createBiquadFilter();
       filter.type = 'highpass';
       filter.frequency.value = 80;

@@ -3,18 +3,13 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import router, { buildStreamEncodingArgs, getFfmpegProcess, parseStreamProgress, redactStreamError, resolveStreamTargets, stopOwnedStream } from './stream';
 
-test('native H.264 is copied and live input is not throttled a second time', () => {
-  const native = buildStreamEncodingArgs('h264');
-  const fallback = buildStreamEncodingArgs('vp8');
-  assert.equal(native[native.indexOf('-c:v') + 1], 'copy');
-  assert.equal(native.includes('-vf'), false);
-  assert.equal(fallback[fallback.indexOf('-c:v') + 1], 'libx264');
-  for (const args of [native, fallback]) {
-    assert.equal(args.includes('-re'), false);
-    assert.equal(args.includes('+nobuffer'), false);
-    assert.equal(args.includes('-progress'), true);
-    assert.equal(args.includes('0:a:0?'), true);
-  }
+test('stream encoding is optimized and live input is not throttled a second time', () => {
+  const args = buildStreamEncodingArgs('vp8');
+  assert.equal(args[args.indexOf('-c:v') + 1], 'libx264');
+  assert.equal(args.includes('-re'), false);
+  assert.equal(args.includes('+nobuffer'), false);
+  assert.equal(args.includes('-progress'), true);
+  assert.equal(args.includes('0:a:0?'), true);
 });
 
 test('progress uses seconds and destination errors never include stream keys', () => {

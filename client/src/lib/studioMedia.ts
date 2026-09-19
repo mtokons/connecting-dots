@@ -45,14 +45,21 @@ export function containRect(sourceWidth: number, sourceHeight: number, width: nu
 }
 
 export function selectCaptureProfile(isSupported: (mime: string) => boolean, quality: BroadcastQuality = '1080p') {
-  const native = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.42E01F,mp4a.40.2'].find(isSupported);
-  const mimeType = native || ['video/webm;codecs=vp8,opus', 'video/webm'].find(isSupported);
+  const mimeType = [
+    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp8',
+    'video/webm',
+    'video/mp4;codecs=avc1.640028,mp4a.40.2',
+  ].find(isSupported);
   if (!mimeType) throw new Error('This browser cannot record a supported broadcast codec. Use current Chrome, Edge or Safari.');
-  const fullHD = Boolean(native) && quality === '1080p';
+  const fullHD = quality === '1080p';
   return {
-    mimeType, codec: native ? 'h264' as const : 'vp8' as const,
-    width: fullHD ? 1920 : 1280, height: fullHD ? 1080 : 720,
-    bitrate: fullHD ? 8_000_000 : 5_000_000, fps: 30,
+    mimeType,
+    codec: 'vp8' as const,
+    width: fullHD ? 1920 : 1280,
+    height: fullHD ? 1080 : 720,
+    bitrate: fullHD ? 5_000_000 : 3_500_000,
+    fps: 30,
     label: `${fullHD ? '1080p' : '720p'} / 30 fps`,
   };
 }

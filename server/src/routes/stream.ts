@@ -64,16 +64,14 @@ export function parseStreamProgress(values: Record<string, string>) {
   };
 }
 
-export function buildStreamEncodingArgs(codec: 'h264' | 'vp8'): string[] {
+export function buildStreamEncodingArgs(codec: 'h264' | 'vp8' = 'vp8'): string[] {
   return [
     '-hide_banner', '-loglevel', 'warning', '-nostats', '-progress', 'pipe:1',
     '-i', 'pipe:0', '-map', '0:v:0', '-map', '0:a:0?',
-    ...(codec === 'h264' ? ['-c:v', 'copy'] : [
-      '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-threads', '2',
-      '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30',
-      '-b:v', '5000k', '-minrate', '5000k', '-maxrate', '5000k', '-bufsize', '10000k',
-      '-x264-params', 'nal-hrd=cbr:force-cfr=1', '-pix_fmt', 'yuv420p', '-g', '60', '-keyint_min', '60', '-sc_threshold', '0',
-    ]),
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-threads', '2',
+    '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30',
+    '-b:v', '4000k', '-minrate', '4000k', '-maxrate', '4500k', '-bufsize', '8000k',
+    '-x264-params', 'nal-hrd=cbr:force-cfr=1', '-pix_fmt', 'yuv420p', '-g', '60', '-keyint_min', '60', '-sc_threshold', '0',
     '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', '-af', 'aresample=async=1:first_pts=0',
   ];
 }
@@ -163,14 +161,14 @@ router.post('/start', (req: Request, res: Response) => {
   }
 
   const teeOutputs = resolvedTargets
-    .map((url) => `[f=flv:onfail=abort:flvflags=no_duration_filesize]${url}`)
+    .map((url) => `[f=flv:onfail=ignore]${url}`)
     .join('|');
 
   const args = [
-    ...buildStreamEncodingArgs(codec),
+    ...buildStreamEncodingArgs(codec as 'h264' | 'vp8'),
     ...(resolvedTargets.length === 1
       ? ['-f', 'flv', '-flvflags', 'no_duration_filesize', resolvedTargets[0]]
-      : ['-f', 'tee', '-use_fifo', '1', '-fifo_options', 'queue_size=120', teeOutputs]),
+      : ['-f', 'tee', teeOutputs]),
   ];
 
   try {
@@ -179,6 +177,7 @@ router.post('/start', (req: Request, res: Response) => {
     });
     ffmpegProcess = encoder;
     streamOwner = workspaceOwner(req);
+    console.log(`[stream:start] owner=${streamOwner} codec=${codec} targets=${resolvedTargets.length}`);
     health = { ...emptyHealth(), status: 'starting' };
     const startedAt = Date.now();
     let lastFrameAt = startedAt;

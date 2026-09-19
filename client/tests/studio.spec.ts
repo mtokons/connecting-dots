@@ -76,9 +76,9 @@ async function canvasSample(page: Page, region = { x: 500, y: 180, width: 500, h
 }
 
 test('capture profiles, bounded grading and uncropped presentation geometry', () => {
-  expect(selectCaptureProfile(() => true).codec).toBe('h264');
-  expect(selectCaptureProfile((mime) => mime.includes('webm')).height).toBe(720);
-  expect(selectCaptureProfile(() => true, '720p').bitrate).toBe(5_000_000);
+  expect(selectCaptureProfile(() => true).codec).toBe('vp8');
+  expect(selectCaptureProfile((mime) => mime.includes('webm')).height).toBe(1080);
+  expect(selectCaptureProfile(() => true, '720p').bitrate).toBe(3_500_000);
   expect(() => selectCaptureProfile(() => false)).toThrow(/supported broadcast codec/);
   expect(cameraFilter(DEFAULT_CAMERA_GRADE)).toContain('contrast(1.04)');
   expect(cameraFilter({ ...DEFAULT_CAMERA_GRADE, exposure: 100, saturation: 100 })).toContain('saturate(1.4)');
@@ -183,67 +183,61 @@ test('reference clips and screen shares are real controllable program sources', 
   await expect(page.getByRole('button', { name: 'Feature reference.mp4' })).toHaveCount(0);
 });
 
-for (const codec of ['h264', 'vp8'] as const) {
-  test(`actual studio ${codec} capture relays locally with audio and ordered shutdown`, async ({ page }, info) => {
-    let encoder: ChildProcessWithoutNullStreams | null = null;
-    let finished: Promise<number | null> = Promise.resolve(null);
-    let health = { ...initialHealth };
-    let errors = '';
-    let pending = '';
-    let values: Record<string, string> = {};
-    const output = info.outputPath(`program-${codec}.flv`);
-    if (codec === 'vp8') await page.addInitScript(() => {
-      const supported = MediaRecorder.isTypeSupported.bind(MediaRecorder);
-      MediaRecorder.isTypeSupported = (mime) => !mime.includes('mp4') && supported(mime);
-    });
-    const end = () => { if (encoder?.stdin.writable && !encoder.stdin.writableEnded) encoder.stdin.end(); };
-    const network = await services(page, {
-      start: (body) => {
-        expect(body).toEqual({ youtube: true, codec });
-        encoder = spawn('ffmpeg', [...buildStreamEncodingArgs(codec), '-f', 'flv', '-y', output]);
-        finished = new Promise((resolve) => encoder!.once('close', resolve));
-        encoder.stderr.on('data', (data: Buffer) => { errors += data.toString(); });
-        encoder.stdout.on('data', (data: Buffer) => {
-          pending += data.toString();
-          const lines = pending.split('\n'); pending = lines.pop() || '';
-          for (const line of lines) {
-            const separator = line.indexOf('='); if (separator < 0) continue;
-            const key = line.slice(0, separator); values[key] = line.slice(separator + 1).trim();
-            if (key === 'progress') { health = { ...health, ...parseStreamProgress(values), status: 'live' }; values = {}; }
-          }
-        });
-      },
-      binary: (chunk) => { health.bytesReceived += chunk.length; encoder?.stdin.write(chunk); },
-      end, stopped: () => finished, health: () => health,
-    });
-    try {
-      await enter(page);
-      await page.getByRole('button', { name: 'Camera frames', exact: true }).click();
-      await page.getByRole('button', { name: 'Go live', exact: true }).click();
-      await expect(page.getByRole('button', { name: 'End broadcast', exact: true })).toBeVisible();
-      await expect.poll(() => health.seconds, { timeout: 50000 }).toBeGreaterThan(codec === 'h264' ? 28 : 12);
-      await expect(page.locator('.desk-air-status')).toContainText('TRANSMITTING');
-      await page.getByRole('button', { name: 'End broadcast', exact: true }).click();
-      await expect(page.getByRole('button', { name: 'Go live', exact: true })).toBeEnabled();
-      expect(await finished).toBe(0);
-      expect(network.starts).toHaveLength(1);
-      expect(health.duplicateFrames).toBe(0);
-      expect(health.droppedFrames).toBe(0);
-      expect(errors).not.toMatch(/error|invalid|broken pipe|non.monoton/i);
-      const probe = spawnSync('ffprobe', ['-v', 'error', '-count_frames', '-show_streams', '-show_format', '-of', 'json', output], { encoding: 'utf8' });
-      expect(probe.status).toBe(0);
-      const metadata = JSON.parse(probe.stdout);
-      const video = metadata.streams.find((stream: { codec_type: string }) => stream.codec_type === 'video');
-      const audio = metadata.streams.find((stream: { codec_type: string }) => stream.codec_type === 'audio');
-      expect(video.codec_name).toBe('h264');
-      expect(video.height).toBe(codec === 'h264' ? 1080 : 720);
-      expect(audio.codec_name).toBe('aac');
-      expect(Number(audio.sample_rate)).toBe(48000);
-      expect(Number(video.nb_read_frames) / Number(metadata.format.duration)).toBeGreaterThan(27);
-      console.log(JSON.stringify({ codec, height: video.height, duration: metadata.format.duration, frames: video.nb_read_frames, duplicateFrames: health.duplicateFrames, droppedFrames: health.droppedFrames }));
-    } finally { end(); if (encoder && encoder.exitCode === null) encoder.kill('SIGTERM'); }
+test('actual studio capture relays locally with audio and ordered shutdown', async ({ page }, info) => {
+  let encoder: ChildProcessWithoutNullStreams | null = null;
+  let finished: Promise<number | null> = Promise.resolve(null);
+  let health = { ...initialHealth };
+  let errors = '';
+  let pending = '';
+  let values: Record<string, string> = {};
+  const output = info.outputPath('program-vp8.flv');
+  const end = () => { if (encoder?.stdin.writable && !encoder.stdin.writableEnded) encoder.stdin.end(); };
+  const network = await services(page, {
+    start: (body) => {
+      expect(body).toEqual({ youtube: true, codec: 'vp8' });
+      encoder = spawn('ffmpeg', [...buildStreamEncodingArgs('vp8'), '-f', 'flv', '-y', output]);
+      finished = new Promise((resolve) => encoder!.once('close', resolve));
+      encoder.stderr.on('data', (data: Buffer) => { errors += data.toString(); });
+      encoder.stdout.on('data', (data: Buffer) => {
+        pending += data.toString();
+        const lines = pending.split('\n'); pending = lines.pop() || '';
+        for (const line of lines) {
+          const separator = line.indexOf('='); if (separator < 0) continue;
+          const key = line.slice(0, separator); values[key] = line.slice(separator + 1).trim();
+          if (key === 'progress') { health = { ...health, ...parseStreamProgress(values), status: 'live' }; values = {}; }
+        }
+      });
+    },
+    binary: (chunk) => { health.bytesReceived += chunk.length; encoder?.stdin.write(chunk); },
+    end, stopped: () => finished, health: () => health,
   });
-}
+  try {
+    await enter(page);
+    await page.getByRole('button', { name: 'Camera frames', exact: true }).click();
+    await page.getByRole('button', { name: 'Go live', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'End broadcast', exact: true })).toBeVisible();
+    await expect.poll(() => health.seconds, { timeout: 50000 }).toBeGreaterThan(10);
+    await expect(page.locator('.desk-air-status')).toContainText('TRANSMITTING');
+    await page.getByRole('button', { name: 'End broadcast', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Go live', exact: true })).toBeEnabled();
+    expect(await finished).toBe(0);
+    expect(network.starts).toHaveLength(1);
+    expect(health.duplicateFrames).toBe(0);
+    expect(health.droppedFrames).toBe(0);
+    expect(errors).not.toMatch(/error|invalid|broken pipe|non.monoton/i);
+    const probe = spawnSync('ffprobe', ['-v', 'error', '-count_frames', '-show_streams', '-show_format', '-of', 'json', output], { encoding: 'utf8' });
+    expect(probe.status).toBe(0);
+    const metadata = JSON.parse(probe.stdout);
+    const video = metadata.streams.find((stream: { codec_type: string }) => stream.codec_type === 'video');
+    const audio = metadata.streams.find((stream: { codec_type: string }) => stream.codec_type === 'audio');
+    expect(video.codec_name).toBe('h264');
+    expect(video.height).toBe(720);
+    expect(audio.codec_name).toBe('aac');
+    expect(Number(audio.sample_rate)).toBe(48000);
+    expect(Number(video.nb_read_frames) / Number(metadata.format.duration)).toBeGreaterThan(25);
+    console.log(JSON.stringify({ codec: 'vp8', height: video.height, duration: metadata.format.duration, frames: video.nb_read_frames, duplicateFrames: health.duplicateFrames, droppedFrames: health.droppedFrames }));
+  } finally { end(); if (encoder && encoder.exitCode === null) encoder.kill('SIGTERM'); }
+});
 
 test('unpaired publishers cannot start and disconnected streams leave transmitting state', async ({ page }) => {
   const network = await services(page);

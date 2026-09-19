@@ -125,6 +125,7 @@ initWs(server, allowedOrigins);
 const streamSources = new WeakMap<object, string>();
 onMessage('stream:identify', (client, message) => {
   client.workspace = identifyWorkspace(typeof message.token === 'string' ? message.token : '') || undefined;
+  console.log(`[stream:identify] client=${client.id} workspace=${client.workspace}`);
 });
 onMessage('stream:stop', (client, message) => {
   if (!client.workspace) return;
@@ -137,7 +138,11 @@ onMessage('stream:disconnect', (client) => {
 });
 onBinary((client, buf) => {
   const ffmpeg = getFfmpegProcess(client.workspace || '');
-  if (ffmpeg && ffmpeg.stdin && !ffmpeg.stdin.destroyed && ffmpeg.stdin.writable) {
+  if (!ffmpeg) {
+    console.warn(`[onBinary] No ffmpeg process for client workspace=${client.workspace}`);
+    return;
+  }
+  if (ffmpeg.stdin && !ffmpeg.stdin.destroyed && ffmpeg.stdin.writable) {
     const source = streamSources.get(ffmpeg);
     if (source && source !== client.id) return;
     streamSources.set(ffmpeg, client.id);

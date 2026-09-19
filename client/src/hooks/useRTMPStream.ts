@@ -114,25 +114,25 @@ const useRTMPStream = () => {
       }
       const capture = selectCaptureProfile((mime) => MediaRecorder.isTypeSupported(mime), quality);
       body.codec = capture.codec;
-      const output = document.createElement('canvas');
-      output.width = capture.width;
-      output.height = capture.height;
-      const context = output.getContext('2d', { alpha: false });
-      if (!context) throw new Error('Canvas capture is not supported.');
-      context.imageSmoothingQuality = 'high';
-      let video = output.captureStream(0);
-      if (typeof (video.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack).requestFrame !== 'function') {
-        video.getTracks().forEach((track) => track.stop());
-        video = output.captureStream(capture.fps);
+      let videoStream: MediaStream;
+      if (source.width === capture.width && source.height === capture.height) {
+        videoStream = source.captureStream(capture.fps);
+      } else {
+        const output = document.createElement('canvas');
+        output.width = capture.width;
+        output.height = capture.height;
+        const context = output.getContext('2d', { alpha: false });
+        if (!context) throw new Error('Canvas capture is not supported.');
+        context.imageSmoothingQuality = 'high';
+        videoStream = output.captureStream(capture.fps);
+        const draw = () => {
+          context.drawImage(source, 0, 0, output.width, output.height);
+        };
+        draw();
+        captureTimerRef.current = setInterval(draw, 1000 / capture.fps);
       }
-      const videoTrack = video.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack;
+      const videoTrack = videoStream.getVideoTracks()[0];
       ownedTracksRef.current.push(videoTrack);
-      const draw = () => {
-        context.drawImage(source, 0, 0, output.width, output.height);
-        videoTrack.requestFrame?.();
-      };
-      draw();
-      captureTimerRef.current = setInterval(draw, 1000 / capture.fps);
 
       let audioTrack = audioStream?.getAudioTracks().find((track) => track.readyState === 'live');
       if (!audioTrack) {
