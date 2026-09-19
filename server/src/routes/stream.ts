@@ -17,11 +17,12 @@ interface StreamHealth {
   speed: number;
   duplicateFrames: number;
   droppedFrames: number;
+  outputBytes: number;
   bytesReceived: number;
   error: string | null;
 }
 
-const emptyHealth = (): StreamHealth => ({ status: 'idle', frames: 0, fps: 0, seconds: 0, speed: 0, duplicateFrames: 0, droppedFrames: 0, bytesReceived: 0, error: null });
+const emptyHealth = (): StreamHealth => ({ status: 'idle', frames: 0, fps: 0, seconds: 0, speed: 0, duplicateFrames: 0, droppedFrames: 0, outputBytes: 0, bytesReceived: 0, error: null });
 let health = emptyHealth();
 
 export const getFfmpegProcess = (owner = '') => owner && owner === streamOwner && health.status !== 'stopping' && health.status !== 'error' ? ffmpegProcess : null;
@@ -61,19 +62,24 @@ export function parseStreamProgress(values: Record<string, string>) {
   return {
     frames: number('frame'), fps: number('fps'), seconds: number('out_time_us') / 1_000_000,
     speed: number('speed'), duplicateFrames: number('dup_frames'), droppedFrames: number('drop_frames'),
+    outputBytes: number('total_size'),
   };
 }
 
 export function buildStreamEncodingArgs(codec: 'h264' | 'vp8' = 'vp8'): string[] {
-  return [
-    '-hide_banner', '-loglevel', 'info', '-nostats', '-progress', 'pipe:1',
-    '-i', 'pipe:0', '-map', '0:v:0', '-map', '0:a:0?',
-    '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-threads', '2',
-    '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30',
-    '-b:v', '3500k', '-minrate', '3500k', '-maxrate', '3500k', '-bufsize', '7000k',
-    '-x264-params', 'nal-hrd=cbr:force-cfr=1', '-pix_fmt', 'yuv420p', '-g', '60', '-keyint_min', '60', '-sc_threshold', '0',
-    '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', '-af', 'aresample=async=1:first_pts=0',
-  ];
+  const input = ['-hide_banner', '-loglevel', 'info', '-nostats', '-progress', 'pipe:1', '-i', 'pipe:0', '-map', '0:v:0', '-map', '0:a:0?'];
+  // H.264 from the browser is already broadcast-ready — copy it (no CPU-bound transcode so the
+  // relay always keeps up with realtime, which is what YouTube/Facebook need to start playback).
+  const video = codec === 'h264'
+    ? ['-c:v', 'copy']
+    : [
+        '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-threads', '2',
+        '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30',
+        '-b:v', '3500k', '-maxrate', '3500k', '-bufsize', '7000k',
+        '-pix_fmt', 'yuv420p', '-g', '60', '-keyint_min', '60', '-sc_threshold', '0',
+      ];
+  const audio = ['-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', '-af', 'aresample=async=1:first_pts=0'];
+  return [...input, ...video, ...audio];
 }
 
 router.use(requireWorkspace);
@@ -207,9 +213,13 @@ router.post('/start', (req: Request, res: Response) => {
         progress[key] = line.slice(separator + 1).trim();
         if (key === 'progress') {
           const next = parseStreamProgress(progress);
-          if (next.frames > health.frames) lastFrameAt = Date.now();
-          health = { ...health, ...next };
-          if (health.status === 'starting' && next.frames > 0) health.status = 'live';
+          // Media time / output bytes advance for both transcode and `-c:v copy`; frame counts
+          // stay 0 when copying, so liveness must not depend on them.
+          const advancing = next.seconds > health.seconds + 0.001 || next.frames > health.frames || next.outputBytes > health.outputBytes;
+          if (advancing) lastFrameAt = Date.now();
+          const flowing = next.seconds > 0 || next.frames > 0 || next.outputBytes > 0;
+          health = { ...health, frames: next.frames, fps: next.fps, seconds: next.seconds, speed: next.speed, duplicateFrames: next.duplicateFrames, droppedFrames: next.droppedFrames, outputBytes: next.outputBytes };
+          if (health.status === 'starting' && flowing) health.status = 'live';
           progress = {};
         }
       }

@@ -45,21 +45,21 @@ export function containRect(sourceWidth: number, sourceHeight: number, width: nu
 }
 
 export function selectCaptureProfile(isSupported: (mime: string) => boolean, quality: BroadcastQuality = '1080p') {
-  const mimeType = [
-    'video/webm;codecs=vp8,opus',
-    'video/webm;codecs=vp8',
-    'video/webm',
-    'video/mp4;codecs=avc1.640028,mp4a.40.2',
-  ].find(isSupported);
+  // Prefer H.264-in-WebM: the browser encodes H.264 (usually hardware accelerated) so the
+  // server can remux with `-c:v copy` (no CPU-bound transcode → guaranteed realtime delivery,
+  // which is what YouTube/Facebook need to leave the "Preparing stream" state).
+  const h264 = ['video/webm;codecs=h264,opus', 'video/webm;codecs=h264'].find(isSupported);
+  const mimeType = h264 || ['video/webm;codecs=vp8,opus', 'video/webm'].find(isSupported);
   if (!mimeType) throw new Error('This browser cannot record a supported broadcast codec. Use current Chrome, Edge or Safari.');
   const fullHD = quality === '1080p';
   return {
     mimeType,
-    codec: 'vp8' as const,
+    codec: h264 ? ('h264' as const) : ('vp8' as const),
     width: fullHD ? 1920 : 1280,
     height: fullHD ? 1080 : 720,
-    bitrate: fullHD ? 5_000_000 : 3_500_000,
+    bitrate: fullHD ? 4_500_000 : 3_000_000,
     fps: 30,
-    label: `${fullHD ? '1080p' : '720p'} / 30 fps`,
+    keyFrameIntervalMs: 2000,
+    label: `${fullHD ? '1080p' : '720p'} / 30 fps${h264 ? '' : ' (VP8)'}`,
   };
 }

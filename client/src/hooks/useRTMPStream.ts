@@ -12,6 +12,7 @@ interface RelayHealth {
   fps: number;
   speed: number;
   seconds: number;
+  outputBytes: number;
   bytesReceived: number;
   duplicateFrames: number;
   droppedFrames: number;
@@ -156,7 +157,7 @@ const useRTMPStream = () => {
       }
       const combined = new MediaStream([videoTrack, ...(audioTrack ? [audioTrack] : [])]);
       const options: MediaRecorderOptions & { videoKeyFrameIntervalDuration: number } = {
-        mimeType: capture.mimeType, videoBitsPerSecond: capture.bitrate, audioBitsPerSecond: 160_000, videoKeyFrameIntervalDuration: 2000,
+        mimeType: capture.mimeType, videoBitsPerSecond: capture.bitrate, audioBitsPerSecond: 160_000, videoKeyFrameIntervalDuration: capture.keyFrameIntervalMs,
       };
       const recorder = new MediaRecorder(combined, options);
       await axios.post(`${API_BASE}/api/stream/start`, body, { headers: workspaceHeaders(), timeout: 15000 });

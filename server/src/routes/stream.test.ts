@@ -4,18 +4,30 @@ import express from 'express';
 import router, { buildStreamEncodingArgs, getFfmpegProcess, parseStreamProgress, redactStreamError, resolveStreamTargets, stopOwnedStream } from './stream';
 
 test('stream encoding is optimized and live input is not throttled a second time', () => {
-  const args = buildStreamEncodingArgs('vp8');
-  assert.equal(args[args.indexOf('-c:v') + 1], 'libx264');
-  assert.equal(args.includes('-re'), false);
-  assert.equal(args.includes('+nobuffer'), false);
-  assert.equal(args.includes('-progress'), true);
-  assert.equal(args.includes('0:a:0?'), true);
+  const h264 = buildStreamEncodingArgs('h264');
+  const vp8 = buildStreamEncodingArgs('vp8');
+  // Browser H.264 is copied (no CPU transcode → always realtime for YouTube/Facebook)
+  assert.equal(h264[h264.indexOf('-c:v') + 1], 'copy');
+  assert.equal(h264.includes('libx264'), false);
+  // VP8 fallback is transcoded to H.264
+  assert.equal(vp8[vp8.indexOf('-c:v') + 1], 'libx264');
+  for (const args of [h264, vp8]) {
+    assert.equal(args.includes('-re'), false);
+    assert.equal(args.includes('+nobuffer'), false);
+    assert.equal(args.includes('-progress'), true);
+    assert.equal(args.includes('0:a:0?'), true);
+    assert.equal(args[args.indexOf('-c:a') + 1], 'aac');
+  }
 });
 
-test('progress uses seconds and destination errors never include stream keys', () => {
-  assert.deepEqual(parseStreamProgress({ frame: '300', fps: '30.0', out_time_us: '10000000', speed: '1.0x', dup_frames: '0', drop_frames: '1' }), {
-    frames: 300, fps: 30, seconds: 10, speed: 1, duplicateFrames: 0, droppedFrames: 1,
+test('progress tracks media time and output bytes for copy liveness; errors never include keys', () => {
+  assert.deepEqual(parseStreamProgress({ frame: '300', fps: '30.0', out_time_us: '10000000', speed: '1.0x', dup_frames: '0', drop_frames: '1', total_size: '2048' }), {
+    frames: 300, fps: 30, seconds: 10, speed: 1, duplicateFrames: 0, droppedFrames: 1, outputBytes: 2048,
   });
+  // Copy path reports frame=0 but still advances media time + bytes → must be detectable as flowing
+  const copy = parseStreamProgress({ frame: '0', fps: '0.0', out_time_us: '5000000', total_size: '1024' });
+  assert.equal(copy.frames, 0);
+  assert.ok(copy.seconds > 0 && copy.outputBytes > 0);
   assert.equal(redactStreamError('Failed rtmps://host/live2/private-key?secret=123: Broken pipe'), 'Failed [destination] Broken pipe');
 });
 

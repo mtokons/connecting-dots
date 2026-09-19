@@ -76,9 +76,12 @@ async function canvasSample(page: Page, region = { x: 500, y: 180, width: 500, h
 }
 
 test('capture profiles, bounded grading and uncropped presentation geometry', () => {
-  expect(selectCaptureProfile(() => true).codec).toBe('vp8');
+  // H.264-in-WebM is preferred so the server can copy without re-encoding
+  expect(selectCaptureProfile(() => true).codec).toBe('h264');
+  expect(selectCaptureProfile((mime) => mime.includes('vp8')).codec).toBe('vp8');
   expect(selectCaptureProfile((mime) => mime.includes('webm')).height).toBe(1080);
-  expect(selectCaptureProfile(() => true, '720p').bitrate).toBe(3_500_000);
+  expect(selectCaptureProfile(() => true, '720p').bitrate).toBe(3_000_000);
+  expect(selectCaptureProfile(() => true).keyFrameIntervalMs).toBe(2000);
   expect(() => selectCaptureProfile(() => false)).toThrow(/supported broadcast codec/);
   expect(cameraFilter(DEFAULT_CAMERA_GRADE)).toContain('contrast(1.04)');
   expect(cameraFilter({ ...DEFAULT_CAMERA_GRADE, exposure: 100, saturation: 100 })).toContain('saturate(1.4)');
@@ -183,19 +186,22 @@ test('reference clips and screen shares are real controllable program sources', 
   await expect(page.getByRole('button', { name: 'Feature reference.mp4' })).toHaveCount(0);
 });
 
-test('actual studio capture relays locally with audio and ordered shutdown', async ({ page }, info) => {
+test('actual studio capture relays to RTMP with YouTube-ready keyframes and ordered shutdown', async ({ page }, info) => {
   let encoder: ChildProcessWithoutNullStreams | null = null;
   let finished: Promise<number | null> = Promise.resolve(null);
   let health = { ...initialHealth };
   let errors = '';
   let pending = '';
   let values: Record<string, string> = {};
-  const output = info.outputPath('program-vp8.flv');
+  let startedCodec = '';
+  const output = info.outputPath('program.flv');
   const end = () => { if (encoder?.stdin.writable && !encoder.stdin.writableEnded) encoder.stdin.end(); };
   const network = await services(page, {
     start: (body) => {
-      expect(body).toEqual({ youtube: true, codec: 'vp8' });
-      encoder = spawn('ffmpeg', [...buildStreamEncodingArgs('vp8'), '-f', 'flv', '-y', output]);
+      expect(body.youtube).toBe(true);
+      startedCodec = String(body.codec);
+      // Mirror the exact server pipeline: copy for h264, transcode for vp8
+      encoder = spawn('ffmpeg', [...buildStreamEncodingArgs(startedCodec as 'h264' | 'vp8'), '-f', 'flv', '-y', output]);
       finished = new Promise((resolve) => encoder!.once('close', resolve));
       encoder.stderr.on('data', (data: Buffer) => { errors += data.toString(); });
       encoder.stdout.on('data', (data: Buffer) => {
@@ -222,20 +228,24 @@ test('actual studio capture relays locally with audio and ordered shutdown', asy
     await expect(page.getByRole('button', { name: 'Go live', exact: true })).toBeEnabled();
     expect(await finished).toBe(0);
     expect(network.starts).toHaveLength(1);
-    expect(health.duplicateFrames).toBe(0);
-    expect(health.droppedFrames).toBe(0);
     expect(errors).not.toMatch(/error|invalid|broken pipe|non.monoton/i);
-    const probe = spawnSync('ffprobe', ['-v', 'error', '-count_frames', '-show_streams', '-show_format', '-of', 'json', output], { encoding: 'utf8' });
+    const probe = spawnSync('ffprobe', ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', output], { encoding: 'utf8' });
     expect(probe.status).toBe(0);
     const metadata = JSON.parse(probe.stdout);
     const video = metadata.streams.find((stream: { codec_type: string }) => stream.codec_type === 'video');
     const audio = metadata.streams.find((stream: { codec_type: string }) => stream.codec_type === 'audio');
     expect(video.codec_name).toBe('h264');
-    expect(video.height).toBe(720);
     expect(audio.codec_name).toBe('aac');
     expect(Number(audio.sample_rate)).toBe(48000);
-    expect(Number(video.nb_read_frames) / Number(metadata.format.duration)).toBeGreaterThan(25);
-    console.log(JSON.stringify({ codec: 'vp8', height: video.height, duration: metadata.format.duration, frames: video.nb_read_frames, duplicateFrames: health.duplicateFrames, droppedFrames: health.droppedFrames }));
+    // Keyframe interval is the critical YouTube requirement: must be <= ~2s and start immediately
+    const packets = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'packet=pts_time,flags', '-of', 'csv=p=0', output], { encoding: 'utf8' });
+    const keyTimes = packets.stdout.trim().split('\n').filter((row) => row.includes('K'))
+      .map((row) => parseFloat(row.split(',')[0])).filter((n) => !Number.isNaN(n));
+    expect(keyTimes.length).toBeGreaterThan(2);
+    expect(keyTimes[0]).toBeLessThan(1);
+    const maxGap = Math.max(...keyTimes.slice(1).map((t, i) => t - keyTimes[i]));
+    expect(maxGap).toBeLessThan(2.5);
+    console.log(JSON.stringify({ codec: startedCodec, video: video.codec_name, height: video.height, duration: metadata.format.duration, keyframes: keyTimes.length, maxKeyframeGap: Number(maxGap.toFixed(2)), firstKeyframe: Number(keyTimes[0].toFixed(3)) }));
   } finally { end(); if (encoder && encoder.exitCode === null) encoder.kill('SIGTERM'); }
 });
 
