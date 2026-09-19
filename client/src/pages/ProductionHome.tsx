@@ -18,8 +18,17 @@ export default function ProductionHome() {
     try {
       workspaceToken();
       if (mode === 'recording') {
-        const project = await projectRequest<VideoProject>('', 'POST', {});
-        navigate(`/edit?studio=${studio}&project=${project.id}`);
+        try {
+          const project = await projectRequest<VideoProject>('', 'POST', {});
+          navigate(`/edit?studio=${studio}&project=${project.id}`);
+        } catch (cause) {
+          const existing = await projectRequest<VideoProject[]>('').catch(() => []);
+          if (existing.length > 0) {
+            navigate(`/edit?studio=${studio}&project=${existing[0].id}`);
+            return;
+          }
+          throw cause;
+        }
       }
       else {
         sessionStorage.removeItem('guestRole');
@@ -54,7 +63,12 @@ export default function ProductionHome() {
           : <div className="file-formats"><Upload size={18} /><span>MP4, MOV, WebM <span className="separator">/</span> Up to 1 GB</span></div>}
         <button className="continue-button" disabled={busy} onClick={() => void continueToStudio()}>{busy ? 'Opening...' : mode === 'recording' ? 'Continue to upload' : 'Set up live event'}<ArrowRight size={19} /></button>
       </footer>
-      {error && <p role="alert" className="workflow-error">{error}</p>}
+      {error && <div role="alert" className="workflow-error" style={{ marginTop: 14 }}>
+        <p style={{ margin: 0 }}>{error}</p>
+        <button type="button" className="continue-button" style={{ marginTop: 10, display: 'inline-flex', padding: '8px 16px', minHeight: 'auto', fontSize: 13 }} onClick={() => navigate('/edit')}>
+          Open recordings to manage storage <ArrowRight size={15} />
+        </button>
+      </div>}
     </div>
   </main>;
 }

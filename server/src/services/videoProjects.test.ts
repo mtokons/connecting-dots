@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
-import { VideoProjects, tokenMatches, MAX_VIDEO_BYTES, ProjectError } from './videoProjects';
+import { VideoProjects, tokenMatches, MAX_VIDEO_BYTES, MAX_PROJECTS, ProjectError } from './videoProjects';
 import { runMedia } from './videoEditor';
 
 test('upload offsets, restart recovery, quotas, and token comparisons', async () => {
@@ -25,7 +25,7 @@ test('upload offsets, restart recovery, quotas, and token comparisons', async ()
     assert.equal(reloaded.get(project.id).received, 3);
     await reloaded.exclusive(project.id, (current) => reloaded.append(current, 3, Buffer.from('def')));
     assert.equal((await fs.readFile(path.join(root, project.id, 'source'))).toString(), 'abcdef');
-    for (let index = 0; index < 3; index++) await reloaded.create('admin@example.test');
+    for (let index = 0; index < MAX_PROJECTS - 1; index++) await reloaded.create('admin@example.test');
     await assert.rejects(reloaded.create('admin@example.test'));
   } finally { await fs.rm(root, { recursive: true, force: true }); }
 });

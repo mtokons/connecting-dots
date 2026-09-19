@@ -7,6 +7,7 @@ export const PROJECT_TTL = 24 * 60 * 60 * 1000;
 export const UPLOAD_TTL = 60 * 60 * 1000;
 export const MAX_VIDEO_BYTES = 1024 * 1024 * 1024;
 export const CHUNK_BYTES = 8 * 1024 * 1024;
+export const MAX_PROJECTS = 12;
 
 export type VideoProject = {
   id: string;
@@ -98,7 +99,16 @@ export class VideoProjects {
   async create(owner: string) {
     await this.initialized;
     await this.cleanup();
-    if (this.projects.size >= 4) throw new ProjectError('Temporary storage is full. Delete an old project first.', 409);
+    if (this.projects.size >= MAX_PROJECTS) {
+      const abandoned = [...this.projects.values()].filter(
+        (p) => p.status === 'empty' && p.received === 0 && !this.locks.has(p.id) && p.createdAt < Date.now() - 15 * 60 * 1000
+      ).sort((a, b) => a.createdAt - b.createdAt);
+      for (const p of abandoned) {
+        await this.remove(p.id);
+        if (this.projects.size < MAX_PROJECTS) break;
+      }
+    }
+    if (this.projects.size >= MAX_PROJECTS) throw new ProjectError('Temporary storage is full. Delete an old project first.', 409);
     const now = Date.now();
     const project: VideoProject = { id: randomUUID(), owner, createdAt: now, expiresAt: now + PROJECT_TTL,
       uploadExpiresAt: now + UPLOAD_TTL, uploadToken: randomBytes(32).toString('hex'), mediaToken: randomBytes(32).toString('hex'),
@@ -276,6 +286,7 @@ export class VideoProjects {
     for (const project of this.projects.values()) {
       if (this.locks.has(project.id)) continue;
       if (project.expiresAt <= now) await this.remove(project.id);
+      else if ((project.status === 'empty' || project.status === 'uploading') && project.uploadExpiresAt <= now) await this.remove(project.id);
       else if (project.status === 'published') await this.exclusive(project.id, (current) => this.purgeMedia(current));
     }
   }
